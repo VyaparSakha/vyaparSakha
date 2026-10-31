@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { Volume2, VolumeX } from 'lucide-react';
 
 const quickStats = [
   { label: 'Active Outlets', value: '1,200+' },
@@ -54,6 +55,8 @@ const workflow = [
 export default function Home() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -61,16 +64,66 @@ export default function Home() {
     }
   }, [isAuthenticated, isLoading, router]);
 
+  const toggleVideoMute = () => {
+    if (!videoRef.current) return;
+    const next = !isVideoMuted;
+    videoRef.current.muted = next;
+    setIsVideoMuted(next);
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative selection:bg-blue-500/20 antialiased overflow-x-hidden">
       {/* Main Content */}
       <main className="relative z-10 flex-1">
-        <section className="pt-12 pb-16 md:pb-20 px-4 md:px-6">
-          <div className="max-w-7xl mx-auto">
+        {/* Hero Section with Immersive Background Video */}
+        <section className="relative pt-12 md:pt-16 pb-16 md:pb-24 px-4 md:px-6 overflow-hidden">
+          {/* Background Video Layer */}
+          <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+            <video
+              ref={videoRef}
+              autoPlay
+              loop
+              muted={isVideoMuted}
+              playsInline
+              preload="auto"
+              className="w-full h-full object-cover object-center opacity-80 scale-105 filter blur-[0.5px] transition-opacity duration-1000"
+            >
+              <source
+                src="/videos/homePage/gemini_generated_video_bb9a33e7.mp4"
+                type="video/mp4"
+              />
+            </video>
+
+            {/* Seamless Light Overlays for Maximum Text Legibility & Brand Blending */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-white" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-transparent to-white/80" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-white/30 to-white" />
+          </div>
+
+          {/* Ambient Sound Control in bottom corner */}
+          <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-20">
+            <button
+              onClick={toggleVideoMute}
+              className="px-3 py-1.5 rounded-full bg-white/80 hover:bg-white border border-slate-200/80 text-slate-700 hover:text-slate-900 shadow-sm backdrop-blur-md text-[11px] font-bold inline-flex items-center gap-1.5 transition-all active:scale-95"
+              title={isVideoMuted ? "Unmute background video" : "Mute background video"}
+            >
+              {isVideoMuted ? (
+                <VolumeX className="w-3.5 h-3.5 text-slate-500" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+              )}
+              <span className="hidden sm:inline">
+                {isVideoMuted ? "Sound Off" : "Sound On"}
+              </span>
+            </button>
+          </div>
+
+          {/* Hero Content Over Video */}
+          <div className="relative z-10 max-w-7xl mx-auto">
             <div className="text-center mb-12 md:mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 border border-white/90 shadow-sm backdrop-blur-sm animate-fade-in-up [animation-delay:200ms]">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-white/90 shadow-sm backdrop-blur-md animate-fade-in-up [animation-delay:200ms]">
                 <span className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
-                <span className="text-[10px] md:text-xs font-black text-slate-600 uppercase tracking-[0.24em]">
+                <span className="text-[10px] md:text-xs font-black text-slate-700 uppercase tracking-[0.24em]">
                   Multi-Store Retail Platform
                 </span>
               </div>
@@ -81,19 +134,19 @@ export default function Home() {
                 <span className="text-gradient-yb italic">SCALE SAFELY.</span>
               </h1>
 
-              <p className="max-w-3xl mx-auto mt-7 md:mt-9 text-base sm:text-lg md:text-xl lg:text-2xl text-slate-600 font-bold leading-relaxed italic px-4 animate-fade-in-up [animation-delay:600ms]">
+              <p className="max-w-3xl mx-auto mt-7 md:mt-9 text-base sm:text-lg md:text-xl lg:text-2xl text-slate-700 font-bold leading-relaxed italic px-4 animate-fade-in-up [animation-delay:600ms]">
                 VyaparSathi brings inventory, billing, and branch intelligence into one reliable command layer for modern retail teams.
               </p>
 
               <div className="mt-10 md:mt-12 flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center px-4 animate-fade-in-up [animation-delay:800ms]">
                 <button
                   onClick={() => router.push('/createStore')}
-                 className="w-full sm:w-auto btn-primary-yb text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-lg shadow-blue-500/10">
+                  className="w-full sm:w-auto btn-primary-yb text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-lg shadow-blue-500/10">
                   Launch Your Store
                 </button>
                 <button 
                   onClick={() => router.push('/storeDashboard')}
-                  className="w-full sm:w-auto btn-secondary-light text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-sm">
+                  className="w-full sm:w-auto btn-secondary-light text-lg md:text-xl px-10 md:px-12 py-4 md:py-5 shadow-sm backdrop-blur-md bg-white/70 hover:bg-white/90">
                   Visit Stores Dashboard
                 </button>
               </div>
@@ -103,7 +156,7 @@ export default function Home() {
               {quickStats.map((stat) => (
                 <div
                   key={stat.label}
-                  className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white shadow-sm px-4 md:px-6 py-4 md:py-5 text-center"
+                  className="rounded-2xl md:rounded-3xl border border-white/80 bg-white/80 backdrop-blur-md shadow-sm px-4 md:px-6 py-4 md:py-5 text-center"
                 >
                   <p className="text-xl md:text-3xl font-black tracking-tight text-slate-900">{stat.value}</p>
                   <p className="mt-1 text-[10px] md:text-xs font-black uppercase tracking-[0.18em] text-slate-500">{stat.label}</p>
