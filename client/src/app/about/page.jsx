@@ -12,7 +12,6 @@ export const metadata = {
     'Discover how Vyapar Sathi streamlines inventory management and POS operations for retail enterprises. Learn about our mission, features, and product roadmap.',
   keywords:
     'retail ERP, inventory management, POS system, point of sale, retail solution, Vyapar Sathi',
-  canonical: 'https://vyapar-sathi.vercel.app/about',
   openGraph: {
     title: 'About Vyapar Sathi | Architecting the Future of Modern Retail Commerce',
     description:

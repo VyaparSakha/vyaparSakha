@@ -2,8 +2,24 @@ import DocumentsHeader from "@/features/documents/components/DocumentsHeader";
 import DocumentList from "@/features/documents/components/DocumentList";
 
 export const metadata = {
-  title: "Documents | Vyapar Sathi",
-  description: "Access guides and documentation for Vyapar Sathi",
+  title: "Documents & User Guides | Vyapar Sakha",
+  description:
+    "Official documentation, user manuals, and step-by-step guides for Vyapar Sakha — inventory setup, GST billing, and store operations.",
+  keywords: [
+    "Vyapar Sakha documentation",
+    "retail billing guide",
+    "inventory setup guide",
+    "Vyapar Sathi user manual",
+  ],
+  alternates: {
+    canonical: "/documents",
+  },
+  openGraph: {
+    title: "Documents & User Guides | Vyapar Sakha",
+    description: "Official guides and technical documentation for Vyapar Sakha.",
+    url: "/documents",
+    type: "website",
+  },
 };
 
 export default function DocumentsPage() {
