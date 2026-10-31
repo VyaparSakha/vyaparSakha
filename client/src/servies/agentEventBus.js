@@ -29,6 +29,46 @@
 
 const REFRESH_EVENT = "agent:refresh";
 const NAVIGATE_EVENT = "agent:navigate";
+const VOICE_TOGGLE_EVENT = "agent:voice:toggle";
+const VOICE_START_EVENT = "agent:voice:start";
+
+/**
+ * Emit a toggle voice mode command.
+ */
+export function emitAgentVoiceToggle() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(VOICE_TOGGLE_EVENT));
+}
+
+/**
+ * Emit a start voice mode command.
+ */
+export function emitAgentVoiceStart() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(VOICE_START_EVENT));
+}
+
+/**
+ * Subscribe to agent voice toggle events.
+ * @param {() => void} handler
+ * @returns {() => void} Unsubscribe function.
+ */
+export function onAgentVoiceToggle(handler) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(VOICE_TOGGLE_EVENT, handler);
+  return () => window.removeEventListener(VOICE_TOGGLE_EVENT, handler);
+}
+
+/**
+ * Subscribe to agent voice start events.
+ * @param {() => void} handler
+ * @returns {() => void} Unsubscribe function.
+ */
+export function onAgentVoiceStart(handler) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(VOICE_START_EVENT, handler);
+  return () => window.removeEventListener(VOICE_START_EVENT, handler);
+}
 
 /**
  * Emit a data-refresh signal to all subscribed components.

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { streamCopilotResponse, fetchChatMessages, streamClarifyResponse } from "../../services/aiDashboardService";
 import { clearSessionId, clearChatId, setChatId } from "@/servies/api";
-import { emitAgentRefresh, emitAgentNavigate } from "@/servies/agentEventBus";
+import { emitAgentRefresh, emitAgentNavigate, onAgentVoiceToggle, onAgentVoiceStart } from "@/servies/agentEventBus";
 import { ChatMessage, ThinkingIndicator } from "../ChatMessage";
 import AttachmentModal from "../AttachmentModal";
 import ClarificationBanner from "../ClarificationBanner";
@@ -450,6 +450,22 @@ const AskCopilotSection = ({
       connectVoiceWs();
     }
   }, [isLiveCallActive, isVoiceWsConnected, handleEndLiveCall, connectVoiceWs]);
+
+  // Listen for global keyboard shortcut events to toggle/start voice mode
+  useEffect(() => {
+    const unsubToggle = onAgentVoiceToggle(() => {
+      handleToggleLiveCall();
+    });
+    const unsubStart = onAgentVoiceStart(() => {
+      if (!isLiveCallActive && !isVoiceWsConnected) {
+        handleToggleLiveCall();
+      }
+    });
+    return () => {
+      unsubToggle();
+      unsubStart();
+    };
+  }, [handleToggleLiveCall, isLiveCallActive, isVoiceWsConnected]);
 
 
   // Synchronize ref for AI speech status to prevent microphone echo loop

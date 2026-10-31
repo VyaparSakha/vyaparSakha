@@ -24,9 +24,12 @@ export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose, sto
           <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
         </div>
         <div>
-            <h3 className="font-medium text-slate-800 text-sm sm:text-base tracking-tight">
-              Vyapar AI Copilot
-            </h3>
+          <h3 className="font-medium text-slate-800 text-sm sm:text-base tracking-tight flex items-center gap-1.5">
+            <span>Vyapar AI Copilot</span>
+            <span className="hidden sm:inline-block text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded font-mono">
+              Alt+A
+            </span>
+          </h3>
         </div>
       </div>
 
@@ -56,7 +59,7 @@ export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose, sto
             type="button"
             onClick={onClose}
             className="inline-flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition ml-1"
-            title="Close Assistant"
+            title="Close Assistant (Esc)"
           >
             <X className="h-4 w-4" />
           </button>
