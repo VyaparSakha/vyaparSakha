@@ -1,21 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo, useContext } from "react";
-import { getBillHistory } from "../services/billingService";
-import { downloadBillPDF } from "../utils/pdfGenerator";
-import { BillingContext } from "../context/billingContext";
+import { useState, useMemo, useContext } from "react";
 import { useParams } from "next/navigation";
-import { showError } from "@/utils/toast";
+import { useBillingHistoryQuery } from "../hooks/useBillingHistoryQuery";
+import { downloadBillPDF } from "@/features/InventoryBilling/utils/pdfGenerator";
+import { BillingContext } from "@/features/InventoryBilling/context/billingContext";
 import {
   Calendar,
-  User,
-  CreditCard,
   Package,
   ChevronDown,
-  ChevronUp,
   FileText,
   Download,
-  History,
   TrendingUp,
   Receipt,
   Clock,
@@ -23,6 +18,7 @@ import {
   Filter,
   X,
   Search,
+  RefreshCw,
 } from "lucide-react";
 
 const MONTHS = [
@@ -43,22 +39,16 @@ const MONTHS = [
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 3 }, (_, i) => CURRENT_YEAR - i);
 
-export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
+export const BillHistory = ({ isMobile = false, defaultOpen = false, storeId: propStoreId }) => {
   const params = useParams();
-  const storeId = params.storeId;
+  const storeId = propStoreId || params?.storeId;
+
+  // Optional context for store metadata
   const billingContext = useContext(BillingContext);
   const currentStore = billingContext?.currentStore || null;
 
-  const [bills, setBills] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(defaultOpen || isMobile);
+  const [isOpen] = useState(defaultOpen || isMobile);
   const [historyPage, setHistoryPage] = useState(1);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 100, // Fetch a large batch to catch today's bills
-    total: 0,
-    totalPages: 0,
-  });
   const [expandedBill, setExpandedBill] = useState(null);
   const [filters, setFilters] = useState({
     date: "",
@@ -66,27 +56,19 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
     year: "",
   });
 
-  // Fetch bill history
-  const fetchBills = async (page = 1, currentFilters = filters) => {
-    try {
-      setLoading(true);
-      const limit = 100;
-      const response = await getBillHistory(storeId, limit, page, currentFilters);
-      setBills(response.bills || []);
-      setPagination(response.data?.pagination || { ...pagination, total: (response.bills || []).length });
-    } catch (error) {
-      console.error("Failed to fetch bill history:", error);
-      showError("Failed to load bill history");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (storeId && isOpen) {
-      fetchBills(1);
-    }
-  }, [storeId, isOpen, filters]);
+  // Fetch and cache bill history with TanStack Query
+  const {
+    bills,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useBillingHistoryQuery({
+    storeId,
+    filters,
+    page: 1,
+    limit: 100,
+    enabled: isOpen && !!storeId,
+  });
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -111,19 +93,19 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
     setHistoryPage(1);
   };
 
-  // Grouping logic
+  // Grouping logic for today's vs older sales
   const { todayBills, olderBills, todayTotal } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const grouped = bills.reduce(
+    const grouped = (bills || []).reduce(
       (acc, bill) => {
         const billDate = new Date(bill.createdAt);
         billDate.setHours(0, 0, 0, 0);
 
         if (billDate.getTime() === today.getTime()) {
           acc.todayBills.push(bill);
-          acc.todayTotal += bill.totalPrice || 0;
+          acc.todayTotal += Number(bill.totalPrice || 0);
         } else {
           acc.olderBills.push(bill);
         }
@@ -144,18 +126,18 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
 
   const totalHistoryPages = Math.ceil(olderBills.length / historyLimit);
 
-  const isFiltered = !!(filters.date || filters.month || filters.year);
-  
+  const isFiltered = Boolean(filters.date || filters.month || filters.year);
+
   // Pagination for filtered results
   const filtratedLimit = 10;
   const paginatedFilteredBills = useMemo(() => {
     const start = (historyPage - 1) * filtratedLimit;
-    return bills.slice(start, start + filtratedLimit);
+    return (bills || []).slice(start, start + filtratedLimit);
   }, [bills, historyPage]);
-  const totalFilteredPages = Math.ceil(bills.length / filtratedLimit);
+  const totalFilteredPages = Math.ceil((bills || []).length / filtratedLimit);
 
   const toggleBillExpansion = (billId) => {
-    setExpandedBill(expandedBill === billId ? null : billId);
+    setExpandedBill((prev) => (prev === billId ? null : billId));
   };
 
   const formatDate = (date) => {
@@ -204,7 +186,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
                       : "bg-amber-100 text-amber-700"
                   }`}
                 >
-                  {bill.paymentStatus}
+                  {bill.paymentStatus || "completed"}
                 </span>
               </div>
               <h4 className="mt-1 text-base font-bold text-gray-800">
@@ -217,7 +199,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Package size={14} className="text-gray-400" />
-                  {bill.products.length} Items
+                  {bill.products?.length || 0} Items
                 </span>
               </div>
             </div>
@@ -226,10 +208,11 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
           <div className="flex items-center justify-between border-t border-gray-50 pt-3 sm:border-0 sm:pt-0">
             <div className="text-right">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Amount</p>
-              <p className="text-xl font-black text-gray-900">₹{bill.totalPrice.toLocaleString()}</p>
+              <p className="text-xl font-black text-gray-900">₹{Number(bill.totalPrice || 0).toLocaleString()}</p>
             </div>
             <div className="ml-6 flex items-center gap-2">
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   downloadBillPDF({
@@ -256,17 +239,17 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
           <div className="rounded-xl border border-blue-50 bg-white p-1 shadow-sm">
             <div className="mb-4 flex items-center justify-between border-b border-gray-50 pb-3">
               <h5 className="text-xs font-bold uppercase tracking-widest text-blue-600">Product Details</h5>
-              <span className="text-xs text-gray-400">{bill.products.length} Items Total</span>
+              <span className="text-xs text-gray-400">{bill.products?.length || 0} Items Total</span>
             </div>
             <div className="space-y-3">
-              {bill.products.map((item, idx) => (
+              {(bill.products || []).map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between py-1 text-sm">
                   <div className="flex items-center gap-3">
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-50 text-[10px] font-bold text-gray-400">
                       {idx + 1}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-800">{item.product?.name || "Product"}</p>
+                      <p className="font-semibold text-gray-800">{item.product?.name || item.name || "Product"}</p>
                       <p className="text-[11px] text-gray-400">Qty: {item.quantity} × ₹{item.price}</p>
                     </div>
                   </div>
@@ -275,7 +258,6 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
               ))}
             </div>
             <div className="mt-4 space-y-2 border-t-2 border-gray-100 pt-4">
-              {/* Calculate subtotal fallback for older bills */}
               <div className="flex justify-between items-center text-sm font-semibold text-gray-500">
                 <span>Gross Amount:</span>
                 <span>₹{(bill.subtotal || (bill.totalPrice + (bill.discount?.amount || 0))).toLocaleString()}</span>
@@ -299,10 +281,10 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
                 <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-white/5 to-transparent pointer-events-none"></div>
                 <div className="relative z-10">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Total Payable</p>
-                  <p className="text-xs font-medium text-blue-300/80">{bill.paymentMethod || "Cash"} • {bill.paymentStatus}</p>
+                  <p className="text-xs font-medium text-blue-300/80">{bill.paymentMethod || "Cash"} • {bill.paymentStatus || "paid"}</p>
                 </div>
                 <div className="relative z-10 text-right">
-                  <p className="text-2xl font-black tracking-tighter text-white">₹{bill.totalPrice.toLocaleString()}</p>
+                  <p className="text-2xl font-black tracking-tighter text-white">₹{Number(bill.totalPrice || 0).toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -322,7 +304,14 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
               <Filter size={18} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900">Filter History</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-900">Filter History</h3>
+                {isFetching && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                    <RefreshCw size={10} className="animate-spin" /> Syncing
+                  </span>
+                )}
+              </div>
               <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Refine your search</p>
             </div>
           </div>
@@ -379,15 +368,26 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
             </div>
           </div>
 
-          {(filters.date || filters.month || filters.year) && (
+          <div className="flex items-center gap-2">
+            {(filters.date || filters.month || filters.year) && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-red-50 bg-red-50/30 text-red-600 text-xs font-bold hover:bg-red-50 transition-all"
+              >
+                <X size={14} />
+                Clear
+              </button>
+            )}
             <button
-              onClick={clearFilters}
-              className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-red-50 bg-red-50/30 text-red-600 text-xs font-bold hover:bg-red-50 transition-all"
+              type="button"
+              onClick={() => refetch()}
+              className="flex items-center justify-center h-10 w-10 rounded-xl border border-gray-100 bg-gray-50/50 text-gray-600 hover:bg-gray-100 transition-all"
+              title="Refresh bills"
             >
-              <X size={14} />
-              Clear
+              <RefreshCw size={14} className={isFetching ? "animate-spin text-blue-600" : ""} />
             </button>
-          )}
+          </div>
         </div>
       </section>
 
@@ -423,7 +423,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
           </div>
 
           <div className="space-y-3">
-            {loading ? (
+            {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100"></div>
@@ -445,6 +445,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
                     </div>
                     <div className="flex items-center gap-3">
                       <button
+                        type="button"
                         onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                         disabled={historyPage === 1}
                         className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-30 transition-all"
@@ -452,6 +453,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
                         Previous
                       </button>
                       <button
+                        type="button"
                         onClick={() => setHistoryPage((p) => Math.min(totalFilteredPages, p + 1))}
                         disabled={historyPage === totalFilteredPages}
                         className="h-10 px-8 rounded-xl bg-blue-600 text-xs font-bold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 disabled:opacity-30 transition-all flex items-center gap-2"
@@ -471,6 +473,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
                 <p className="text-base font-bold text-gray-900">No results found</p>
                 <p className="mt-1 text-xs text-gray-500">Try adjusting your filters to find what you're looking for</p>
                 <button 
+                  type="button"
                   onClick={clearFilters}
                   className="mt-6 text-xs font-bold text-blue-600 hover:underline"
                 >
@@ -511,11 +514,11 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
               </div>
             </div>
 
-            {loading && bills.length === 0 ? (
+            {isLoading && bills.length === 0 ? (
               <div className="flex h-40 items-center justify-center rounded-3xl border-2 border-dashed border-gray-100 bg-gray-50/50">
                 <div className="flex flex-col items-center gap-2">
                   <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Hydrating data...</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Loading records...</p>
                 </div>
               </div>
             ) : todayBills.length > 0 ? (
@@ -549,7 +552,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
             </div>
 
             <div className="space-y-4">
-              {loading && bills.length === 0 ? (
+              {isLoading && bills.length === 0 ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100"></div>
@@ -557,9 +560,11 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
                 </div>
               ) : olderBills.length > 0 ? (
                 <>
-                  {paginatedOlderBills.map((bill) => (
-                    <BillCard key={bill._id} bill={bill} isToday={false} />
-                  ))}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+                    {paginatedOlderBills.map((bill) => (
+                      <BillCard key={bill._id} bill={bill} isToday={false} />
+                    ))}
+                  </div>
                   
                   {/* Local History Pagination */}
                   {totalHistoryPages > 1 && (
@@ -569,6 +574,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
                       </div>
                       <div className="flex items-center gap-3">
                         <button
+                          type="button"
                           onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                           disabled={historyPage === 1}
                           className="flex items-center gap-1 rounded-xl bg-white border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-30"
@@ -576,6 +582,7 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
                           Previous
                         </button>
                         <button
+                          type="button"
                           onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
                           disabled={historyPage === totalHistoryPages}
                           className="flex items-center gap-1 rounded-xl bg-blue-600 px-6 py-2 text-xs font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-500 disabled:opacity-30"
@@ -599,3 +606,6 @@ export const BillHistory = ({ isMobile = false, defaultOpen = false }) => {
     </div>
   );
 };
+
+export default BillHistory;
+

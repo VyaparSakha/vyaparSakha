@@ -1,6 +1,6 @@
 "use client";
 
-import { BillHistory } from "@/features/InventoryBilling/components";
+import { BillHistory } from "@/features/BillingHistory/components/BillHistory";
 import { BillingProvider } from "@/features/InventoryBilling/context/billingContext";
 
 /**
@@ -16,7 +16,7 @@ export default function BillingHistoryPage() {
             <p className="text-gray-500 text-xs font-medium mt-0.5">View and manage all past customer bills</p>
           </div>
           
-          {/* Bill History Component */}
+          {/* Bill History Component powered by TanStack Query */}
           <BillHistory isMobile={false} defaultOpen={true} />
         </div>
       </div>
