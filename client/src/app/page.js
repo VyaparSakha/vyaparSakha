@@ -86,7 +86,7 @@ export default function Home() {
               muted={isVideoMuted}
               playsInline
               preload="auto"
-              className="w-full h-full object-cover object-center opacity-80 scale-105 filter blur-[0.5px] transition-opacity duration-1000"
+              className="w-full h-full object-cover object-center opacity-70 scale-105 filter blur-[0.5px] transition-opacity duration-1000"
             >
               <source
                 src="/videos/homePage/gemini_generated_video_bb9a33e7.mp4"
