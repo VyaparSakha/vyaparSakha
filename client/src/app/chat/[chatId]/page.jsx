@@ -7,6 +7,9 @@ export default function DynamicChatPage() {
   const params = useParams();
   const chatId = params?.chatId || null;
 
-  return <ChatViewContainer initialChatId={chatId} />;
+  return (
+    <div className="h-[calc(100vh-5rem)] w-full p-3 flex flex-col overflow-hidden">
+      <ChatViewContainer initialChatId={chatId} />
+    </div>
+  );
 }
-

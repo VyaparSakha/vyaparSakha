@@ -186,7 +186,7 @@ export default function ChatViewContainer({ initialChatId = null }) {
   }, []);
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] w-full flex-col bg-slate-50/70 overflow-hidden">
+    <div className="mx-auto flex h-full w-full max-w-7xl flex-1 min-h-0 flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50">
       {/* Dedicated Chat Page Header (Clean, distinct from sidebar header) */}
       <ChatPageHeader
         stores={stores}
@@ -198,7 +198,7 @@ export default function ChatViewContainer({ initialChatId = null }) {
       />
 
       {/* Main Chat Workspace */}
-      <main className="relative flex-1 w-full min-h-0 overflow-hidden">
+      <main className="relative flex-1 w-full min-h-0 overflow-hidden bg-white">
         {selectedStoreId ? (
           <div className="relative h-full flex flex-col">
             <AskCopilotSection

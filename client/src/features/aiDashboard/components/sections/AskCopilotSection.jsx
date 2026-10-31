@@ -1254,23 +1254,9 @@ const AskCopilotSection = ({
             )}
 
 
-            <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pb-4">
               {!messages.length && !loading ? (
-                <div className="flex h-full flex-col items-center justify-center gap-6 px-6 text-center">
-                  <div className="relative mx-auto">
-                    <div className="relative h-20 w-20 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 p-1 shadow-xl shadow-indigo-500/30 ring-4 ring-indigo-500/20 flex items-center justify-center">
-                      <div className="h-full w-full rounded-[20px] bg-white flex items-center justify-center p-2 overflow-hidden">
-                        <img
-                          src="/images/logo/vyapar-sakha-version2-logo.svg"
-                          alt="Vyapar Sakha Logo"
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center border-2 border-white shadow-md">
-                      <Sparkles className="h-4 w-4 text-white animate-pulse" />
-                    </div>
-                  </div>
+                <div className="flex h-full flex-col items-center justify-center gap-6 px-4 py-8 text-center max-w-xl mx-auto">
                   <div className="space-y-2 max-w-md">
                     <h2 className="text-3xl font-black tracking-tight">
                       <span className="bg-gradient-to-r from-slate-800 via-indigo-900 to-blue-700 bg-clip-text text-transparent">
@@ -1293,7 +1279,7 @@ const AskCopilotSection = ({
                 </div>
               ) : (
                 <>
-                  <div className="flex w-full flex-col gap-6 py-4">
+                  <div className="mx-auto flex w-full max-w-4xl lg:max-w-5xl flex-col gap-6 py-6">
                     {messages.map((entry) => (
                       <ChatMessage
                         key={entry.id}
@@ -1311,7 +1297,7 @@ const AskCopilotSection = ({
             </div>
 
             {clarification.isOpen && (
-              <div className="max-w-4xl mx-auto px-4 pt-2">
+              <div className="max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 pt-2">
                 <ClarificationBanner
                   question={clarification.question}
                   isSubmitting={clarification.isSubmitting}
@@ -1323,7 +1309,7 @@ const AskCopilotSection = ({
 
             {/* LIVE USER SPEECH TRANSCRIPT BANNER */}
             {isListening && (
-              <div className="max-w-4xl mx-auto px-4 pt-2">
+              <div className="max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 pt-2">
                 <div className="mb-2 flex items-center justify-between gap-3 px-3.5 py-2.5 bg-gradient-to-r from-indigo-500/15 via-purple-500/15 to-blue-500/15 border border-indigo-200/90 rounded-2xl backdrop-blur-sm shadow-sm animate-pulse">
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="relative flex items-center justify-center flex-shrink-0">
