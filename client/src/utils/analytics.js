@@ -36,3 +36,4 @@ export const trackEvent = ({ action, category, label, value, ...params }) => {
     });
   }
 };
+
