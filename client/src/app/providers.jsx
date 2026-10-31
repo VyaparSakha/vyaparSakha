@@ -16,6 +16,7 @@ export default function Providers({ children }) {
   const isAuthPage = pathname === "/login" || pathname === "/signUp";
   const isBillingPage = pathname?.endsWith("/billing");
   const isStorePage = pathname?.startsWith("/storeDashboard/");
+  const isDedicatedChatPage = pathname === "/chat" || pathname?.startsWith("/chat/") || pathname?.startsWith("/chat?");
   const showNavbar = !isAuthPage && !isBillingPage && !isStorePage;
 
   return (
@@ -40,8 +41,8 @@ export default function Providers({ children }) {
             >
               {children}
             </div>
-            {/* Floating AI Chatbot & Voice Assistant Widget */}
-            <FloatingChatBot />
+            {/* Floating AI Chatbot & Voice Assistant Widget (hidden on full chat page) */}
+            {!isDedicatedChatPage && <FloatingChatBot />}
             {/* Toast Notifications */}
             <Toaster
               position="bottom-right"

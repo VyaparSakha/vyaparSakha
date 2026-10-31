@@ -151,6 +151,9 @@ const AskCopilotSection = ({
   onSession,
   className = "h-[700px] flex flex-col rounded-md border border-slate-200 bg-white shadow-sm overflow-hidden",
   onClose,
+  showCustomHeader = true,
+  onNewChatCustom,
+  onStoreDetected,
 }) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
@@ -179,6 +182,7 @@ const AskCopilotSection = ({
   const recognitionRef = useRef(null);
   const accumulatedTextRef = useRef("");
   const abortRef = useRef(null);
+  const activeStreamingChatIdRef = useRef(null);
   const textareaRef = useRef(null);
   const endRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -697,6 +701,12 @@ const AskCopilotSection = ({
       return;
     }
 
+    // If this chatId is currently actively streaming in this component, do NOT refetch
+    // and wipe out the in-progress conversation!
+    if (activeStreamingChatIdRef.current === chatId || abortRef.current) {
+      return;
+    }
+
     let isMounted = true;
     setLoading(true);
     setShowSuggestions(false);
@@ -704,6 +714,9 @@ const AskCopilotSection = ({
     fetchChatMessages(storeId, chatId)
       .then((data) => {
         if (!isMounted) return;
+        if (data?.store_id && onStoreDetected) {
+          onStoreDetected(data.store_id);
+        }
         const msgs = (data?.messages || []).map((m, i) => ({
           id: `${m.role}-${i}-${Date.now()}`,
           role: m.role,
@@ -727,7 +740,7 @@ const AskCopilotSection = ({
     return () => {
       isMounted = false;
     };
-  }, [chatId, storeId]);
+  }, [chatId, storeId, onStoreDetected]);
 
   const updateAssistantMeta = useCallback((assistantId, payload) => {
     setMessages((prev) =>
@@ -774,6 +787,7 @@ const AskCopilotSection = ({
       abortRef.current.abort();
       abortRef.current = null;
     }
+    activeStreamingChatIdRef.current = null;
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
@@ -807,6 +821,7 @@ const AskCopilotSection = ({
       setError("");
       setLoading(true);
       setShowSuggestions(false);
+      activeStreamingChatIdRef.current = chatId || "pending";
       toolCallsRef.current = [];
       accumulatedTextRef.current = "";
       stopListening();
@@ -870,7 +885,8 @@ const AskCopilotSection = ({
               // refresh the sidebar so the meaningful title replaces the
               // "New Chat" placeholder.
               if (payload?.chatId) {
-                onChatCreated?.();
+                activeStreamingChatIdRef.current = payload.chatId;
+                onChatCreated?.(payload.chatId, payload.title);
                 if (payload?.title) {
                   onTitleGenerated?.(payload.chatId, payload.title);
                 }
@@ -879,6 +895,7 @@ const AskCopilotSection = ({
             }
 
             if (event === "done") {
+              activeStreamingChatIdRef.current = null;
               updateAssistantMeta(assistantId, payload || null);
               setLoading(false);
               abortRef.current = null;
@@ -889,6 +906,7 @@ const AskCopilotSection = ({
             }
 
             if (event === "error") {
+              activeStreamingChatIdRef.current = null;
               const errorMessage = payload?.message || "Copilot stream failed.";
               setError(errorMessage);
               updateAssistantError(assistantId, errorMessage);
@@ -933,6 +951,7 @@ const AskCopilotSection = ({
           },
         });
       } catch (streamError) {
+        activeStreamingChatIdRef.current = null;
         const errorMessage = streamError?.message || "Unable to stream copilot response.";
         setError(errorMessage);
         updateAssistantError(assistantId, errorMessage);
@@ -996,7 +1015,7 @@ const AskCopilotSection = ({
             }
             if (event === "session") {
               if (payload?.chatId) {
-                onChatCreated?.();
+                onChatCreated?.(payload.chatId, payload.title);
                 if (payload?.title) {
                   onTitleGenerated?.(payload.chatId, payload.title);
                 }
@@ -1224,13 +1243,15 @@ const AskCopilotSection = ({
         ) : (
           /* STANDARD CHAT VIEW (WHITE HEADER + MESSAGES + INPUT BAR) */
           <>
-            {/* TOP HEADER SUBCOMPONENT */}
-            <CopilotHeader
-              onNewChat={newChat}
-              onToggleSidebar={onToggleSidebar}
-              onClose={onClose}
-              storeId={storeId}
-            />
+            {/* TOP HEADER SUBCOMPONENT (Shown for floating/sidebar chat, hidden when parent page supplies custom header) */}
+            {showCustomHeader && (
+              <CopilotHeader
+                onNewChat={onNewChatCustom || newChat}
+                onToggleSidebar={onToggleSidebar}
+                onClose={onClose}
+                storeId={storeId}
+              />
+            )}
 
 
             <div className="flex-1 overflow-y-auto px-4 pb-4">

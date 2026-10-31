@@ -67,9 +67,16 @@ export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose, sto
 
         {currentStoreId && (
           <Link
-            href={`/storeDashboard/${currentStoreId}/ai-dashboard`}
+            href="/chat"
+            onClick={() => {
+              if (currentStoreId && typeof window !== "undefined") {
+                try {
+                  localStorage.setItem("vyapar_chat_store_id", currentStoreId);
+                } catch (_) {}
+              }
+            }}
             className="inline-flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition ml-0.5"
-            title="Open Full Page AI Dashboard"
+            title="Open Full Page Chat"
           >
             <Maximize2 className="h-4 w-4" />
           </Link>

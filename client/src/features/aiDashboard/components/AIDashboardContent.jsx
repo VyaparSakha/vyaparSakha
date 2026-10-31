@@ -1,15 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import EmptyState from "./sections/EmptyState";
-import AskCopilotSection from "./sections/AskCopilotSection";
-import ChatHistorySidebar from "./ChatHistorySidebar";
 import ForecastSection from "./sections/ForecastSection";
 import InsightsSection from "./sections/InsightsSection";
 import RestockSection from "./sections/RestockSection";
 import SummarySection from "./sections/SummarySection";
 import AgentFilesSection from "./sections/AgentFilesSection";
-import { getChatId, setChatId } from "@/servies/api";
 
 const AIDashboardContent = ({
   forecast = [],
@@ -51,94 +47,34 @@ const AIDashboardContent = ({
     );
   }
 
-  const [chatKey, setChatKey] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    setChatKey(getChatId());
-  }, []);
-  // Bumped whenever a new chat is created or titled, so the sidebar
-  // refetches its list and shows the generated title.
-  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
-
-  const handleChatSelect = (chat) => {
-    if (!chat) {
-      setChatKey(null);
-      return;
-    }
-    setChatId(chat.chat_id);
-    setChatKey(chat.chat_id);
-    setSidebarOpen(false);
-  };
-
-  const handleChatDeleted = () => {
-    setChatKey(null);
-  };
-
-  // When a new chat is created mid-stream, refresh the sidebar so the
-  // new chat appears with its generated title.
-  const handleChatCreated = () => {
-    setSidebarRefreshKey((k) => k + 1);
-  };
-
-  // When the backend generates a title for a new chat, refresh the
-  // sidebar list so the meaningful title replaces "New Chat".
-  const handleTitleGenerated = () => {
-    setSidebarRefreshKey((k) => k + 1);
-  };
-
   return (
-    <div className="flex flex-col gap-8 lg:flex-row">
-      <div className="min-w-0 flex-1 space-y-8">
-        <AskCopilotSection
-          storeId={storeId}
-          chatId={chatKey}
-          onSession={(id) => {
-            setChatId(id);
-            setChatKey(id);
-          }}
-          onChatCreated={handleChatCreated}
-          onTitleGenerated={handleTitleGenerated}
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
-        />
+    <div className="w-full space-y-8">
+      {/* <SummarySection
+        storeId={storeId}
+        summary={summary}
+        loading={loadingState.summary}
+        error={errorState.summary}
+      /> */}
 
-        <ChatHistorySidebar
-          storeId={storeId}
-          onChatSelect={handleChatSelect}
-          onChatDeleted={handleChatDeleted}
-          refreshKey={sidebarRefreshKey}
-          key={storeId}
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+      <ForecastSection
+        forecast={forecast}
+        loading={loadingState.forecast}
+        error={errorState.forecast}
+      />
 
-        {/* <SummarySection
-          storeId={storeId}
-          summary={summary}
-          loading={loadingState.summary}
-          error={errorState.summary}
-        /> */}
+      <RestockSection
+        restock={restock}
+        loading={loadingState.restock}
+        error={errorState.restock}
+      />
 
-        <ForecastSection
-          forecast={forecast}
-          loading={loadingState.forecast}
-          error={errorState.forecast}
-        />
+      <InsightsSection
+        insights={insights}
+        loading={loadingState.insights}
+        error={errorState.insights}
+      />
 
-        <RestockSection
-          restock={restock}
-          loading={loadingState.restock}
-          error={errorState.restock}
-        />
-
-        <InsightsSection
-          insights={insights}
-          loading={loadingState.insights}
-          error={errorState.insights}
-        />
-
-        <AgentFilesSection storeId={storeId} />
-      </div>
+      <AgentFilesSection storeId={storeId} />
     </div>
   );
 };
