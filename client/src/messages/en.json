@@ -256,7 +256,10 @@
     "haveAccount": "Already have an account?",
     "signingIn": "Signing in...",
     "signingUp": "Creating account...",
-    "logoutSuccess": "Logged out successfully."
+    "logoutSuccess": "Logged out successfully.",
+    "loginRequiredTitle": "Login Required",
+    "loginRequiredDesc": "You must be signed in to access Vyapar Sakha AI Copilot. Please log in with your account to chat, manage your store intelligence, and receive personalized retail guidance.",
+    "redirectingIn": "Redirecting to login in"
   },
   "aiCopilot": {
     "title": "Vyapar Sakha AI Copilot",
