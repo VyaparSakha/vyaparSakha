@@ -87,6 +87,7 @@ describe("Navbar Component", () => {
 
       // Check for navigation items (appear in both desktop and mobile)
       expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Sakha Samvad").length).toBeGreaterThan(0);
       expect(screen.getAllByText("About").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Docs").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Features").length).toBeGreaterThan(0);

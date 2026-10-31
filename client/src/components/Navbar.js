@@ -18,6 +18,12 @@ const NAV_ITEMS = [
     icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
   },
   {
+    label: "Copilot",
+    href: "/chat",
+    isAi: true,
+    icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z",
+  },
+  {
     label: "About",
     href: "/about",
     icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
@@ -142,7 +148,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-10">
+          <div className="hidden md:flex items-center gap-6 lg:gap-8 xl:gap-10">
             {NAV_ITEMS.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -150,6 +156,8 @@ export default function Navbar() {
               const translatedLabel =
                 item.label === "Dashboard"
                   ? t("navigation.dashboard")
+                  : item.label === "Copilot"
+                  ? (t("navigation.copilot") || "सखा संवाद")
                   : item.label === "About"
                   ? t("navigation.about")
                   : item.label === "Docs"
@@ -162,14 +170,19 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`text-sm uppercase tracking-widest transition-all duration-300 relative py-1
+                  className={`text-sm uppercase tracking-widest transition-all duration-300 relative py-1 flex items-center gap-1.5
                     ${
                       isActive
                         ? "text-blue-600 font-extrabold after:absolute after:bottom-[-4px] after:left-0 after:w-full after:h-[2.5px] after:bg-blue-600 after:rounded-full"
                         : "text-slate-600 font-bold hover:text-blue-600"
                     }`}
                 >
-                  {translatedLabel}
+                  <span>{translatedLabel}</span>
+                  {item.isAi && (
+                    <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-xs">
+                      AI
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -403,6 +416,8 @@ export default function Navbar() {
                     <span className="tracking-wide uppercase text-xs font-black">
                       {item.label === "Dashboard"
                         ? t("navigation.dashboard")
+                  : item.label === "Copilot"
+                  ? (t("navigation.copilot") || "सखा संवाद")
                         : item.label === "About"
                         ? t("navigation.about")
                         : item.label === "Docs"
@@ -411,6 +426,11 @@ export default function Navbar() {
                         ? t("navigation.features")
                         : item.label}
                     </span>
+                    {item.isAi && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-xs">
+                        AI
+                      </span>
+                    )}
                     {isActive && (
                       <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
                     )}

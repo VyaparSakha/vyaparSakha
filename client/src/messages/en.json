@@ -39,6 +39,7 @@
   },
   "navigation": {
     "dashboard": "Dashboard",
+    "copilot": "Samvad",
     "about": "About",
     "docs": "Docs",
     "features": "Features",
