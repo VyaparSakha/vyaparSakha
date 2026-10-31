@@ -206,6 +206,27 @@ export default function ChatViewContainer({ initialChatId = null }) {
     );
   }
 
+  // 1. Initial auth verification loading state
+  if (authLoading) {
+    return (
+      <div className="mx-auto flex h-full w-full max-w-7xl flex-1 min-h-0 flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50 p-8">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <p className="text-sm font-semibold text-slate-500">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated state: display modal with login button and redirect countdown
+  if (!isAuthenticated) {
+    return (
+      <div className="relative mx-auto flex h-full w-full max-w-7xl flex-1 min-h-0 flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-slate-50/50 shadow-xl shadow-slate-200/50">
+        <ChatAuthModal isOpen={true} redirectPath={pathname || "/chat"} />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex h-full w-full max-w-7xl flex-1 min-h-0 flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white shadow-xl shadow-slate-200/50">
       {/* Dedicated Chat Page Header (Clean, distinct from sidebar header) */}

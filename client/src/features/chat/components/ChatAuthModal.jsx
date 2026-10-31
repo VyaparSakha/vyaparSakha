@@ -123,3 +123,4 @@ export default function ChatAuthModal({ isOpen = true, redirectPath = null }) {
     </div>
   );
 }
+
