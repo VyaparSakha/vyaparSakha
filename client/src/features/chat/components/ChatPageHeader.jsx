@@ -30,7 +30,7 @@ export default function ChatPageHeader({
           </div>
           <div>
             <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Vyapar Copilot</span>
+              <span>Vyapar Sakha</span>
             </h1>
           </div>
         </div>
