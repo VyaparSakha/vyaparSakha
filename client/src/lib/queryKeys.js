@@ -49,6 +49,34 @@ export const sellerQueryKeys = {
   detail: (storeId, sellerId) => ['stores', storeId, 'sellers', 'detail', sellerId],
 };
 
+export const analyticsQueryKeys = {
+  all: (storeId) => ['stores', storeId, 'analytics'],
+  summary: (storeId, rangeDays) => ['stores', storeId, 'analytics', 'summary', String(rangeDays)],
+  trend: (storeId, rangeDays) => ['stores', storeId, 'analytics', 'trend', String(rangeDays)],
+  categories: (storeId, rangeDays) => ['stores', storeId, 'analytics', 'categories', String(rangeDays)],
+  topProducts: (storeId, rangeDays) => ['stores', storeId, 'analytics', 'topProducts', String(rangeDays)],
+  slowMoving: (storeId, rangeDays) => ['stores', storeId, 'analytics', 'slowMoving', String(rangeDays)],
+  productOverview: (storeId, productId, rangeDays) => [
+    'stores',
+    storeId,
+    'analytics',
+    'productOverview',
+    String(productId),
+    String(rangeDays),
+  ],
+};
+
+export const productAnalyticsQueryKeys = {
+  all: (storeId, productId) => ['stores', storeId, 'productAnalytics', String(productId)],
+  overview: (storeId, productId, rangeDays, page) => [
+    'stores',
+    storeId,
+    'productAnalytics',
+    String(productId),
+    { rangeDays: String(rangeDays), page: Number(page) || 1 },
+  ],
+};
+
 export const authQueryKeys = {
   user: ['auth', 'user'],
   permissions: (storeId) => ['auth', 'permissions', storeId],
@@ -60,6 +88,8 @@ export const queryKeys = {
   billing: billingQueryKeys,
   buyers: buyerQueryKeys,
   sellers: sellerQueryKeys,
+  analytics: analyticsQueryKeys,
+  productAnalytics: productAnalyticsQueryKeys,
   auth: authQueryKeys,
 };
 

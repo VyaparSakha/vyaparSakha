@@ -1,55 +1,74 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchStoreById } from "@/features/storeDashboard/services/storeDashboardService";
-import { RANGE_OPTIONS } from "../constants";
-import { createDateRange } from "../utils";
-import { fetchProductAnalytics } from "../services/productAnalyticsService";
+'use client';
+
+import { useCallback, useMemo, useState } from 'react';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { fetchStoreById } from '@/features/storeDashboard/services/storeDashboardService';
+import { RANGE_OPTIONS } from '../constants';
+import { createDateRange } from '../utils';
+import { fetchProductAnalytics } from '../services/productAnalyticsService';
+import { productAnalyticsQueryKeys, storeQueryKeys } from '@/lib/queryKeys';
 
 const getErrorMessage = (error) =>
-  error?.message || "Unable to load product analytics right now.";
+  error?.message || 'Unable to load product analytics right now.';
 
-const useProductAnalytics = (storeId, productId) => {
+/**
+ * Custom hook for managing individual product analytics with TanStack Query caching
+ */
+export const useProductAnalytics = (storeId, productId) => {
+  const queryClient = useQueryClient();
   const [rangeDays, setRangeDays] = useState(30);
   const [page, setPage] = useState(1);
-  const [store, setStore] = useState(null);
-  const [overview, setOverview] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const rangeQuery = useMemo(() => createDateRange(rangeDays), [rangeDays]);
 
-  const load = useCallback(async () => {
-    if (!storeId || !productId) return;
+  // 1. Store Details Query
+  const storeQuery = useQuery({
+    queryKey: storeQueryKeys.detail(storeId),
+    queryFn: async () => {
+      const res = await fetchStoreById(storeId);
+      return res?.data || null;
+    },
+    enabled: Boolean(storeId),
+    staleTime: 60 * 1000,
+  });
 
-    setLoading(true);
-    setError("");
-
-    try {
-      const [storeResponse, overviewResponse] = await Promise.all([
-        fetchStoreById(storeId),
-        fetchProductAnalytics(storeId, productId, {
-          ...rangeQuery,
-          page,
-          limit: 8,
-        }),
-      ]);
-
-      setStore(storeResponse?.data || null);
-      setOverview(overviewResponse?.data || null);
-    } catch (requestError) {
-      setError(getErrorMessage(requestError));
-    } finally {
-      setLoading(false);
-    }
-  }, [page, productId, rangeQuery, storeId]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  // 2. Product Analytics Overview Query with smooth pagination
+  const overviewQuery = useQuery({
+    queryKey: productAnalyticsQueryKeys.overview(storeId, productId, rangeDays, page),
+    queryFn: async () => {
+      const res = await fetchProductAnalytics(storeId, productId, {
+        ...rangeQuery,
+        page,
+        limit: 8,
+      });
+      return res?.data || null;
+    },
+    enabled: Boolean(storeId && productId),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: keepPreviousData, // Keeps previous transaction page visible while fetching next
+  });
 
   const changeRange = (value) => {
     setRangeDays(value);
     setPage(1);
   };
+
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: productAnalyticsQueryKeys.all(storeId, productId),
+    });
+    queryClient.invalidateQueries({
+      queryKey: storeQueryKeys.detail(storeId),
+    });
+  }, [queryClient, storeId, productId]);
+
+  const loading = storeQuery.isLoading || overviewQuery.isLoading;
+  const error = overviewQuery.error
+    ? getErrorMessage(overviewQuery.error)
+    : storeQuery.error
+    ? getErrorMessage(storeQuery.error)
+    : '';
 
   return {
     rangeDays,
@@ -57,11 +76,11 @@ const useProductAnalytics = (storeId, productId) => {
     setRangeDays: changeRange,
     page,
     setPage,
-    store,
-    overview,
+    store: storeQuery.data || null,
+    overview: overviewQuery.data || null,
     loading,
     error,
-    refresh: load,
+    refresh,
   };
 };
 

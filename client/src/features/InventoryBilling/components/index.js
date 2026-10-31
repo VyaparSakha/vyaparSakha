@@ -5,6 +5,5 @@ export { ManualProductModal } from "./ManualProductModal";
 export { BillPreviewModal } from "./BillPreviewModal";
 export { BillingHeader } from "./BillingHeader";
 export { BillingActions } from "./BillingActions";
-export { BillHistory } from "@/features/BillingHistory";
 export { BillingSyncIndicator } from "./BillingSyncIndicator";
 export { default as UpiQrModal } from "./UpiQrModal";
