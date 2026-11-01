@@ -1,11 +1,19 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { Lottie } from "lottie-react";
+import emptyCartAnimation from "@/assets/animations/billing_anim/NexaStore — Empty Billing Cart · 4.5s (1).json";
 import { useBillingContext } from "../context/billingContext";
-import { Trash2, Plus, Minus, ShoppingBag, Package } from "lucide-react";
+import { Trash2, Plus, Minus, Package } from "lucide-react";
 
 export const BilledProductsList = () => {
   const { billedProducts, removeProduct, updateProductQuantity } =
     useBillingContext();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="bg-white/95 backdrop-blur-md rounded-2xl md:rounded-3xl shadow-lg shadow-slate-200/50 border border-slate-200/80 overflow-hidden transition-all flex flex-col h-full min-h-[580px]">
@@ -26,14 +34,32 @@ export const BilledProductsList = () => {
 
       {/* Content Area - Fills equal height with internal scroll or empty state */}
       {billedProducts.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-          <div className="w-16 h-16 rounded-3xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-500 mb-4">
-            <ShoppingBag size={28} className="stroke-[1.8]" />
-          </div>
-          <h3 className="text-base font-bold text-slate-800">Your Billing Cart is Empty</h3>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-sm">
-            Scan barcodes using your scanner or search products above to start building the bill
-          </p>
+        <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center select-none relative overflow-hidden">
+          {/* Subtle ambient colorful glow behind animation */}
+          <div className="absolute w-72 h-72 sm:w-96 sm:h-96 bg-indigo-100/30 rounded-full blur-3xl pointer-events-none" />
+
+          {mounted ? (
+            <div
+              className="relative w-full max-w-[520px] sm:max-w-[580px] md:max-w-[640px] aspect-[1672/941] flex items-center justify-center"
+              style={{
+                maskImage:
+                  "radial-gradient(ellipse 92% 88% at 50% 50%, black 58%, rgba(0, 0, 0, 0.4) 85%, transparent 100%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse 92% 88% at 50% 50%, black 58%, rgba(0, 0, 0, 0.4) 85%, transparent 100%)",
+              }}
+            >
+              <Lottie
+                src={emptyCartAnimation}
+                loop
+                autoplay
+                className="w-full h-full object-contain pointer-events-none select-none scale-105"
+              />
+              {/* Soft feathered inner blur edges to blend seamlessly into background */}
+              <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_35px_15px_rgba(255,255,255,0.95),inset_0_0_60px_30px_rgba(255,255,255,0.8)]" />
+            </div>
+          ) : (
+            <div className="w-full max-w-[520px] sm:max-w-[580px] md:max-w-[640px] aspect-[1672/941]" />
+          )}
         </div>
       ) : (
         <div className="divide-y divide-slate-100 flex-1 overflow-y-auto">
