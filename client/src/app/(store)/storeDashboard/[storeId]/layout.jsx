@@ -10,15 +10,16 @@ import { InventoryProvider } from "@/features/inventory/context/inventoryContext
 import { useAgentNavigation } from "@/hooks/useAgentNavigation";
 
 /**
- * Store Dashboard Layout - Conditional sidebar
- * Desktop: Fixed sidebar + content
- * Mobile: Content full-width + drawer controlled by hamburger
+ * Store Dashboard Layout - Responsive sidebar across screen sizes:
+ * - Desktop (≥1024px): Full 220px fixed sidebar
+ * - Tablet (768px – 1023px): Compact 64px icon-only fixed sidebar with tooltips
+ * - Mobile (<768px): Top bar hamburger + sliding drawer overlay
  */
 export default function StoreLayout({ children }) {
   const pathname = usePathname();
   const isBillingPage = pathname.endsWith("/billing");
   const { enterStorePage, exitStorePage, copilotOpen, copilotWidth, isDraggingCopilot } = useStorePageContext();
-  const [isResponsive, setIsResponsive] = useState(false);
+  const [screenMode, setScreenMode] = useState("desktop"); // "mobile" | "tablet" | "desktop"
   const { storeId } = useParams();
 
   // Allow the AI agent to navigate to different store pages
@@ -34,26 +35,40 @@ export default function StoreLayout({ children }) {
     };
   }, [enterStorePage, exitStorePage]);
 
-  // Detect if screen is mobile/responsive
+  // Handle responsive breakpoints cleanly
   useEffect(() => {
-    const checkIfResponsive = () => {
-      setIsResponsive(window.innerWidth < 768); // md breakpoint
+    const updateScreenMode = () => {
+      const width = window.innerWidth;
+      if (width < 768) {
+        setScreenMode("mobile");
+      } else if (width < 1024) {
+        setScreenMode("tablet");
+      } else {
+        setScreenMode("desktop");
+      }
     };
 
-    checkIfResponsive();
-    window.addEventListener("resize", checkIfResponsive);
-    return () => window.removeEventListener("resize", checkIfResponsive);
+    updateScreenMode();
+    window.addEventListener("resize", updateScreenMode);
+    return () => window.removeEventListener("resize", updateScreenMode);
   }, []);
 
   if (isBillingPage) {
     return <>{children}</>;
   }
 
+  const isMobile = screenMode === "mobile";
+  const isTablet = screenMode === "tablet";
+
   return (
     <InventoryProvider>
       <div className="relative flex min-h-screen w-full print:block">
-        {/* Desktop Sidebar - Hidden on mobile and on print */}
-        {!isResponsive && <div className="print:hidden"><VyaparSathiSidebar /></div>}
+        {/* Desktop & Tablet Sidebar - Hidden on mobile (<768px) and print */}
+        {!isMobile && (
+          <div className="print:hidden">
+            <VyaparSathiSidebar collapsed={isTablet} />
+          </div>
+        )}
 
         {/* Main Content Area - Slides and resizes dynamically when AI Copilot opens and resizes */}
         <main
@@ -61,17 +76,21 @@ export default function StoreLayout({ children }) {
             isDraggingCopilot ? "transition-none" : "transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
           }`}
           style={{
-            padding: isResponsive
+            padding: isMobile
               ? "0px 8px 16px 8px"
+              : isTablet
+              ? copilotOpen
+                ? "0px 2px 16px 4px"
+                : "0px 10px 16px 4px"
               : copilotOpen
               ? "0px 2px 16px 0px"
               : "0px 12px 16px 0px",
-            marginRight: !isResponsive && copilotOpen ? `${copilotWidth || 480}px` : "0px",
+            marginRight: !isMobile && copilotOpen ? `${copilotWidth || 480}px` : "0px",
           }}
         >
           {/* Breadcrumb - fixed sticky at top so it always appears while scrolling */}
-          <div className="print:hidden sticky top-1 z-40 sm:ml-3 sm:mr-4">
-            <StoreBreadcrumb isResponsive={isResponsive} />
+          <div className="print:hidden sticky top-1 z-40 sm:ml-2 sm:mr-3">
+            <StoreBreadcrumb isResponsive={isMobile} />
           </div>
 
           {children}
@@ -79,7 +98,11 @@ export default function StoreLayout({ children }) {
       </div>
 
       {/* Mobile Sidebar Drawer - Only on mobile, never on print */}
-      {isResponsive && <div className="print:hidden"><StoreSidebarDrawer /></div>}
+      {isMobile && (
+        <div className="print:hidden">
+          <StoreSidebarDrawer />
+        </div>
+      )}
     </InventoryProvider>
   );
 }
