@@ -25,10 +25,15 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
   const deleteRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  const setToCompleted = useCallback((ref) => {
+  const setToCompleted = useCallback((ref, frame = 135) => {
     try {
       ref.current?.pause();
-      ref.current?.seek({ percent: 100 });
+      if (ref.current?.seek) {
+        ref.current.seek({ frame });
+      }
+      if (ref.current?.animationItem?.goToAndStop) {
+        ref.current.animationItem.goToAndStop(frame, true);
+      }
     } catch (e) {
       // ignore
     }
@@ -36,25 +41,40 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
 
   const playFromStart = useCallback((ref) => {
     try {
-      ref.current?.seek({ percent: 0 });
-      ref.current?.play();
+      if (ref.current?.seek) {
+        ref.current.seek({ frame: 0 });
+      }
+      if (ref.current?.animationItem?.goToAndPlay) {
+        ref.current.animationItem.goToAndPlay(0, true);
+      } else {
+        ref.current?.play?.();
+      }
     } catch (e) {
       ref.current?.play?.();
     }
   }, []);
 
   useEffect(() => {
-    setToCompleted(shopRef);
-    setToCompleted(parcelRef);
-    setToCompleted(staffRef);
+    setToCompleted(shopRef, 135);
+    setToCompleted(parcelRef, 135);
+    setToCompleted(staffRef, 135);
 
-    const timer = setTimeout(() => {
-      setToCompleted(shopRef);
-      setToCompleted(parcelRef);
-      setToCompleted(staffRef);
-    }, 120);
+    const timer1 = setTimeout(() => {
+      setToCompleted(shopRef, 135);
+      setToCompleted(parcelRef, 135);
+      setToCompleted(staffRef, 135);
+    }, 60);
 
-    return () => clearTimeout(timer);
+    const timer2 = setTimeout(() => {
+      setToCompleted(shopRef, 135);
+      setToCompleted(parcelRef, 135);
+      setToCompleted(staffRef, 135);
+    }, 200);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [setToCompleted]);
 
   return (
