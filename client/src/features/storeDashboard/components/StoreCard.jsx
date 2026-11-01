@@ -4,7 +4,8 @@ import React, { useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Lottie } from 'lottie-react';
-import shopAnimation from '../../../assets/animations/storedashboard/card/01 🏪 Shop assembles 🏪 isolated motion.json';
+import shopAnimation from '../../../assets/animations/storedashboard/card/01_shop_assembles.json';
+import parcel
 import { getStoreInitials, getStoreColor } from '../utils/helpers';
 
 /**
