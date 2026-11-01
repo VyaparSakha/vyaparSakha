@@ -162,16 +162,18 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
         <button 
           onMouseEnter={() => doorRef.current?.play()}
           onMouseLeave={() => doorRef.current?.stop()}
-          className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black text-white uppercase tracking-widest bg-gradient-to-r from-blue-600 to-indigo-600 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-300 shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95"
+          className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black text-white uppercase tracking-widest bg-gradient-to-r from-blue-600 to-indigo-600 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-300 shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95 group/btn"
         >
-          <div className="w-7 h-5 flex items-center justify-center shrink-0">
-            <Lottie
-              lottieRef={doorRef}
-              src={doorAnimation}
-              loop
-              autoplay={false}
-              style={{ width: 28, height: 21 }}
-            />
+          <div className="w-7 h-7 flex items-center justify-center shrink-0 overflow-hidden relative">
+            <div className="absolute w-[210px] h-[158px] flex items-center justify-center pointer-events-none">
+              <Lottie
+                lottieRef={doorRef}
+                src={doorAnimation}
+                loop
+                autoplay={false}
+                style={{ width: 210, height: 158 }}
+              />
+            </div>
           </div>
           <span>OPEN</span>
         </button>
@@ -183,16 +185,18 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
             onClick={(e) => e.stopPropagation()}
             onMouseEnter={() => staffRef.current?.play()}
             onMouseLeave={() => staffRef.current?.stop()}
-            className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black uppercase tracking-widest text-indigo-600 bg-blue-50/90 border border-blue-100/90 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-200 hover:bg-blue-100/90 hover:border-blue-200 active:scale-95"
+            className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black uppercase tracking-widest text-indigo-600 bg-blue-50/90 border border-blue-100/90 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-200 hover:bg-blue-100/90 hover:border-blue-200 active:scale-95 group/btn"
           >
-            <div className="w-7 h-5 flex items-center justify-center shrink-0">
-              <Lottie
-                lottieRef={staffRef}
-                src={staffAnimation}
-                loop
-                autoplay={false}
-                style={{ width: 28, height: 21 }}
-              />
+            <div className="w-7 h-7 flex items-center justify-center shrink-0 overflow-hidden relative">
+              <div className="absolute w-[210px] h-[158px] flex items-center justify-center pointer-events-none">
+                <Lottie
+                  lottieRef={staffRef}
+                  src={staffAnimation}
+                  loop
+                  autoplay={false}
+                  style={{ width: 210, height: 158 }}
+                />
+              </div>
             </div>
             <span>STAFF</span>
           </Link>
@@ -207,16 +211,18 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
             }}
             onMouseEnter={() => deleteRef.current?.play()}
             onMouseLeave={() => deleteRef.current?.stop()}
-            className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50/90 border border-rose-100/90 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-200 hover:bg-rose-100/90 hover:border-rose-200 active:scale-95"
+            className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50/90 border border-rose-100/90 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-200 hover:bg-rose-100/90 hover:border-rose-200 active:scale-95 group/btn"
           >
-            <div className="w-7 h-5 flex items-center justify-center shrink-0">
-              <Lottie
-                lottieRef={deleteRef}
-                src={deleteAnimation}
-                loop
-                autoplay={false}
-                style={{ width: 28, height: 21 }}
-              />
+            <div className="w-7 h-7 flex items-center justify-center shrink-0 overflow-hidden relative">
+              <div className="absolute w-[210px] h-[158px] flex items-center justify-center pointer-events-none translate-x-1">
+                <Lottie
+                  lottieRef={deleteRef}
+                  src={deleteAnimation}
+                  loop
+                  autoplay={false}
+                  style={{ width: 210, height: 158 }}
+                />
+              </div>
             </div>
             <span>DELETE</span>
           </button>
