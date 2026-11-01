@@ -11,8 +11,6 @@ import {
 import AnimatedPurchasesButton from "./AnimatedPurchasesButton";
 import AnimatedInventoryButton from "./AnimatedInventoryButton";
 import AnimatedBillingButton from "./AnimatedBillingButton";
-import AnimatedInventoryButton from "./AnimatedInventoryButton";
-import AnimatedBillingButton from "./AnimatedBillingButton";
 
 /**
  * OverviewHeader - Clean, modular header section for Store Overview

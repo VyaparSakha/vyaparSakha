@@ -7,6 +7,3 @@ export { SuppliersAndPurchasesSection } from "./SuppliersAndPurchasesSection";
 export { default as AnimatedPurchasesButton } from "./AnimatedPurchasesButton";
 export { default as AnimatedInventoryButton } from "./AnimatedInventoryButton";
 export { default as AnimatedBillingButton } from "./AnimatedBillingButton";
-export { default as AnimatedPurchasesButton } from "./AnimatedPurchasesButton";
-export { default as AnimatedInventoryButton } from "./AnimatedInventoryButton";
-export { default as AnimatedBillingButton } from "./AnimatedBillingButton";

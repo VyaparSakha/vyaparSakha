@@ -331,6 +331,7 @@ const getUserInitials = (displayName) => {
 
 export default function VyaparSathiSidebar({
   isResponsive = false,
+  collapsed = false,
   onNavClick,
 }) {
   const pathname = usePathname();
@@ -941,8 +942,263 @@ export default function VyaparSathiSidebar({
     return null; // Don't render sidebar on mobile, only drawer controlled by context
   }
 
+  // Tablet mode: compact icon-only sidebar
+  if (collapsed) {
+    const collapsedNavItems = [
+      { key: "overview", href: `/storeDashboard/${storeId}`, icon: icons.Overview, label: t("navigation.overview") },
+      { key: "inventory", href: `/storeDashboard/${storeId}/inventory`, icon: icons.Inventory, label: t("navigation.inventory") },
+      { key: "billing", href: `/storeDashboard/${storeId}/billing`, icon: icons.Billing, label: t("navigation.billing") },
+      { key: "billing-history", href: `/storeDashboard/${storeId}/billing-history`, icon: icons["Billing History"], label: t("navigation.billingHistory") },
+      { key: "purchases", href: `/storeDashboard/${storeId}/purchases`, icon: icons.Purchases, label: t("navigation.purchases") },
+      { key: "sellers", href: `/storeDashboard/${storeId}/sellers`, icon: icons.Sellers, label: t("navigation.sellers") },
+      { key: "buyers", href: `/storeDashboard/${storeId}/buyers`, icon: icons.Buyers, label: t("navigation.buyers") },
+      { key: "staff", href: `/storeDashboard/${storeId}/staff`, icon: icons.Staff, label: t("navigation.staff") },
+      { key: "analytics", href: `/storeDashboard/${storeId}/analytics`, icon: icons.Analytics, label: t("navigation.analytics") },
+      { key: "ai-dashboard", href: `/storeDashboard/${storeId}/ai-dashboard`, icon: icons["AI Dashboard"], label: t("navigation.aiCopilot") },
+      { key: "automations", href: `/storeDashboard/${storeId}/automations`, icon: icons.Automations, label: t("navigation.automations") },
+    ];
+
+    return (
+      <div style={{ width: 72, minWidth: 72, flexShrink: 0, padding: "12px 0 12px 8px" }}>
+        <div
+          style={{
+            width: 58,
+            height: "calc(100vh - 24px)",
+            background: "#1b2a42",
+            borderRadius: 16,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            padding: "10px 4px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.22), 0 1.5px 6px rgba(0,0,0,0.13)",
+            position: "fixed",
+            top: 12,
+            left: 8,
+            zIndex: 40,
+          }}
+        >
+          {/* Back button */}
+          <button
+            onClick={handleBackClick}
+            style={{
+              background: "#263d5e",
+              border: "none",
+              color: "#dbeafe",
+              cursor: "pointer",
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 10,
+              flexShrink: 0,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#35527c"; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "#263d5e"; e.currentTarget.style.color = "#dbeafe"; }}
+            aria-label="Back to store dashboard"
+            title="Back to store dashboard"
+          >
+            <ArrowLeft size={16} />
+          </button>
+
+          {/* Store Logo badge */}
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: "#263d5e",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+              fontWeight: 700,
+              color: "#7eb3ff",
+              marginBottom: 10,
+              flexShrink: 0,
+            }}
+            title={currentStore?.name || "VyaparSakha"}
+          >
+            {getStoreInitials(currentStore?.name)}
+          </div>
+
+          <div style={{ height: 1, width: 36, background: "rgba(255,255,255,0.06)", marginBottom: 8 }} />
+
+          {/* Nav items icon column */}
+          <div
+            style={{
+              flex: 1,
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+              overflowY: "auto",
+            }}
+            className="no-scrollbar"
+          >
+            {collapsedNavItems.map((item) => {
+              const isActive = activeNav === item.key || (item.key === "purchases" && activeNav.startsWith("purchases"));
+              return (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  onClick={handleNavClick}
+                  title={item.label}
+                  aria-label={item.label}
+                  style={{ textDecoration: "none" }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 38,
+                      borderRadius: 10,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: isActive ? "#2563eb" : "transparent",
+                      color: isActive ? "#fff" : "#7a97be",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = "#223350";
+                        e.currentTarget.style.color = "#b8d0ef";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.color = "#7a97be";
+                      }
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {item.icon}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div style={{ height: 1, width: 36, background: "rgba(255,255,255,0.06)", margin: "8px 0" }} />
+
+          {/* Settings Link */}
+          <Link
+            href={`/storeDashboard/${storeId}/settings`}
+            onClick={handleNavClick}
+            title={t("navigation.settings")}
+            aria-label={t("navigation.settings")}
+            style={{ textDecoration: "none", marginBottom: 4 }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 38,
+                borderRadius: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: pathname?.includes("/settings") ? "#2563eb" : "transparent",
+                color: pathname?.includes("/settings") ? "#fff" : "#7a97be",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (!pathname?.includes("/settings")) {
+                  e.currentTarget.style.background = "#223350";
+                  e.currentTarget.style.color = "#b8d0ef";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!pathname?.includes("/settings")) {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "#7a97be";
+                }
+              }}
+            >
+              {icons.Settings}
+            </div>
+          </Link>
+
+          {/* User Profile Avatar */}
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: "50%",
+              background: user?.photoURL
+                ? "transparent"
+                : "linear-gradient(135deg, #4a90d9, #2563eb)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 11,
+              fontWeight: 700,
+              color: "#fff",
+              flexShrink: 0,
+              overflow: "hidden",
+              marginBottom: 4,
+            }}
+            title={user?.displayName || "User"}
+          >
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt={user?.displayName || "User"}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => { e.target.style.display = "none"; }}
+              />
+            ) : (
+              getUserInitials(user?.displayName)
+            )}
+          </div>
+
+          {/* Logout button */}
+          <button
+            onClick={async () => {
+              handleNavClick();
+              await logout();
+            }}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#f87171",
+              cursor: "pointer",
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.15s ease",
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)";
+              e.currentTarget.style.color = "#fca5a5";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "#f87171";
+            }}
+            title={t("navigation.logout")}
+            aria-label={t("navigation.logout")}
+          >
+            {icons.Logout}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop mode: full width sidebar
   return (
-    <div style={{ width: 232, minWidth: 232, padding: "16px 0 16px 12px" }}>
+    <div style={{ width: 232, minWidth: 232, padding: "16px 0 16px 12px", flexShrink: 0 }}>
       <div
         style={{
           width: 220,

@@ -1,9 +1,20 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Lottie } from "lottie-react";
+import billingLogoAnimation from "@/assets/animations/billing_anim/Invoice billing logo.json";
+import inventoryAnimation from "@/assets/animations/inventory/Inventory — layered motion scene.json";
 import { useInventoryContext } from "../context/inventoryContext";
 
 const InventoryHeader = ({ storeId, storeName, onAddProductClick, onBulkUploadClick }) => {
   const router = useRouter();
   const { hasPermission } = useInventoryContext();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const canAddProduct = hasPermission("inventory:add");
   const canAccessBilling = hasPermission("billing:create");
@@ -39,21 +50,33 @@ const InventoryHeader = ({ storeId, storeName, onAddProductClick, onBulkUploadCl
           {canAccessBilling && (
             <button
               onClick={() => router.push(`/storeDashboard/${storeId}/billing`)}
-              className="flex-shrink-0 bg-green-600 hover:bg-green-700 text-white py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold transition-all"
+              className="flex-shrink-0 bg-green-600 hover:bg-green-700 active:scale-95 text-white py-1 sm:py-1.5 px-2.5 sm:px-3.5 rounded-xl shadow-lg hover:shadow-green-500/25 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold transition-all group"
+              title="Create New Bill"
             >
-              <svg
-                className="h-4 w-4 sm:h-5 sm:w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
+              {mounted ? (
+                <div className="w-9 h-9 sm:w-11 sm:h-11 -my-2 flex-shrink-0 flex items-center justify-center overflow-visible transition-transform duration-200 group-hover:scale-110">
+                  <Lottie
+                    src={billingLogoAnimation}
+                    loop
+                    autoplay
+                    className="w-full h-full object-contain scale-125 sm:scale-135 pointer-events-none select-none"
+                  />
+                </div>
+              ) : (
+                <svg
+                  className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              )}
               <span className="hidden sm:inline">Billing</span>
             </button>
           )}
@@ -86,23 +109,38 @@ const InventoryHeader = ({ storeId, storeName, onAddProductClick, onBulkUploadCl
           {canAddProduct && (
             <button
               onClick={onAddProductClick}
-              className="flex-shrink-0 btn-primary-yb py-2 sm:py-2.5 px-3 sm:px-4 shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold"
+              className="flex-shrink-0 relative overflow-visible py-1 sm:py-1.5 px-2.5 sm:px-3.5 rounded-xl shadow-lg flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 active:scale-95 group"
+              style={{ background: "linear-gradient(to right, #2563eb, #f59e0b)" }}
+              title="Add Product to Inventory"
             >
-              <svg
-                className="h-4 w-4 sm:h-5 sm:w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              <span className="sm:hidden">Add</span>
-              <span className="hidden sm:inline">Add Product</span>
+              {/* Animation container — same box as Billing button to keep heights consistent */}
+              {mounted ? (
+                <div className="w-9 h-9 sm:w-11 sm:h-11 -my-2 flex-shrink-0 flex items-center justify-center overflow-visible transition-transform duration-200 group-hover:scale-110">
+                  <Lottie
+                    src={inventoryAnimation}
+                    loop
+                    autoplay
+                    className="w-full h-full object-contain scale-[2.2] sm:scale-[2.4] pointer-events-none select-none"
+                  />
+                </div>
+              ) : (
+                <svg
+                  className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              )}
+              {/* Text — right/yellow side */}
+              <span className="sm:hidden text-white drop-shadow">Add</span>
+              <span className="hidden sm:inline text-white drop-shadow">Add Product</span>
             </button>
           )}
         </div>
