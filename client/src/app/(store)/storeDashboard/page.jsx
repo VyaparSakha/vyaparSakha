@@ -56,25 +56,18 @@ const StoreDashboard = () => {
   };
 
   const handleCreateStore = async () => {
-    let loaderTriggered = false;
     const startTime = Date.now();
-
-    // Start 1s timer to decide if we show loader
-    loaderTimerRef.current = setTimeout(() => {
-      setLoaderMessage('Setting up your store form...');
-      loaderTriggered = true;
-    }, 1000);
+    // Show mascot loader immediately on button click
+    setLoaderMessage('Setting up your store form...');
 
     // Initial navigation request
     router.push('/createStore');
 
-    // If loader appears, ensure it stays for at least 2 seconds
-    if (loaderTriggered) {
-      const elapsed = Date.now() - startTime;
-      const remainingForMinDisplay = 3000 - elapsed; // 1s wait + 2s display = 3s total
-      if (remainingForMinDisplay > 0) {
-        await new Promise(r => setTimeout(r, remainingForMinDisplay));
-      }
+    // Ensure loader displays for at least 1.2s so the user sees the smooth mascot animation
+    const elapsed = Date.now() - startTime;
+    const minDisplayMs = 1200;
+    if (elapsed < minDisplayMs) {
+      await new Promise(r => setTimeout(r, minDisplayMs - elapsed));
     }
   };
 

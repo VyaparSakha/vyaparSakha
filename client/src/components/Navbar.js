@@ -84,36 +84,25 @@ export default function Navbar() {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  // Handle logout with delayed loader
+  // Handle logout with immediate loader
   const handleLogout = async () => {
-    let loaderTriggered = false;
     const startTime = Date.now();
-
-    // Start a timer to show loader if logout takes too long
-    loaderTimerRef.current = setTimeout(() => {
-      setLoaderMessage("Signing out of your session...");
-      loaderTriggered = true;
-    }, 1000);
+    // Show mascot loader immediately on button click
+    setLoaderMessage("Signing out of your session...");
 
     try {
       await logout();
 
-      // If loader appeared, wait until it has been shown for at least 2 seconds
-      if (loaderTriggered) {
-        const elapsed = Date.now() - startTime;
-        const minDisplayTotal = 3000; // 1s threshold + 2s display
-        if (elapsed < minDisplayTotal) {
-          await new Promise((r) => setTimeout(r, minDisplayTotal - elapsed));
-        }
+      // Ensure the mascot loader displays gracefully for at least 1.2s
+      const elapsed = Date.now() - startTime;
+      const minDisplayMs = 1200;
+      if (elapsed < minDisplayMs) {
+        await new Promise((r) => setTimeout(r, minDisplayMs - elapsed));
       }
 
       setProfileMenuOpen(false);
       close();
     } finally {
-      if (loaderTimerRef.current) {
-        clearTimeout(loaderTimerRef.current);
-        loaderTimerRef.current = null;
-      }
       setLoaderMessage("");
     }
   };

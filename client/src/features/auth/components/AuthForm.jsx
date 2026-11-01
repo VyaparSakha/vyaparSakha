@@ -18,63 +18,14 @@ export default function AuthForm({ mode = 'login' }) {
     password: '',
   });
   const [loaderMessage, setLoaderMessage] = useState('');
-  const loaderTimerRef = useRef(null);
 
+  // Handle redirect and loading states
   useEffect(() => {
-    let loaderTriggered = false;
-    const startTime = Date.now();
-
-    const handleRedirect = async () => {
-      // 1. If currently submitting (API call)
-      if (isSubmitting) {
-        if (!loaderTimerRef.current) {
-          loaderTimerRef.current = setTimeout(() => {
-            setLoaderMessage('Authenticating your account...');
-            loaderTriggered = true;
-          }, 1000);
-        }
-      } 
-      // 2. If authenticated and needs redirect
-      else if (isAuthenticated) {
-        // Clear previous timer if any and start redirect timer
-        if (loaderTimerRef.current) clearTimeout(loaderTimerRef.current);
-        
-        loaderTimerRef.current = setTimeout(() => {
-          setLoaderMessage('Preparing your command center...');
-          loaderTriggered = true;
-        }, 1000);
-
-        // Perform the redirect
-        router.replace(redirectPath);
-
-        // If the loader was triggered, wait to ensure it's shown for 2 seconds
-        if (loaderTriggered) {
-          const elapsed = Date.now() - startTime;
-          const minDisplayTotal = 3000; 
-          if (elapsed < minDisplayTotal) {
-            await new Promise(r => setTimeout(r, minDisplayTotal - elapsed));
-          }
-        }
-      } 
-      // 3. Clear everything if neither
-      else {
-        if (loaderTimerRef.current) {
-          clearTimeout(loaderTimerRef.current);
-          loaderTimerRef.current = null;
-        }
-        setLoaderMessage('');
-      }
-    };
-
-    handleRedirect();
-
-    return () => {
-      if (loaderTimerRef.current) {
-        clearTimeout(loaderTimerRef.current);
-        loaderTimerRef.current = null;
-      }
-    };
-  }, [isAuthenticated, isSubmitting, router, redirectPath]);
+    // If authenticated and no loader is currently running, handle redirect
+    if (isAuthenticated && !loaderMessage) {
+      router.replace(redirectPath);
+    }
+  }, [isAuthenticated, router, redirectPath, loaderMessage]);
 
   const onChange = (event) => {
     if (error) {
@@ -89,16 +40,32 @@ export default function AuthForm({ mode = 'login' }) {
 
   const onSubmit = async (event) => {
     event.preventDefault();
+    const startTime = Date.now();
+
+    // 1. Show mascot loader immediately on button click (0ms delay)
+    setLoaderMessage(isSignup ? 'Creating your account...' : 'Authenticating your account...');
 
     try {
       if (isSignup) {
         await signup(formData);
-        return;
+      } else {
+        await login(formData);
       }
 
-      await login(formData);
+      // 2. Smoothly transition message while preparing dashboard
+      setLoaderMessage('Preparing your command center...');
+
+      // 3. Professional grace period: display for at least 1.5s so the mascot animation plays smoothly
+      const elapsed = Date.now() - startTime;
+      const minDisplayMs = 1500;
+      if (elapsed < minDisplayMs) {
+        await new Promise((r) => setTimeout(r, minDisplayMs - elapsed));
+      }
+
+      router.replace(redirectPath);
     } catch {
-      // Error state is already handled in the hook.
+      // If authentication fails, dismiss loader immediately so the error message is visible
+      setLoaderMessage('');
     }
   };
 

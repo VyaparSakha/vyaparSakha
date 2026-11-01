@@ -62,13 +62,14 @@ const PageLoader = ({
         <div className="relative flex flex-col items-center bg-white/85 backdrop-blur-2xl border border-white/70 shadow-2xl shadow-slate-300/60 rounded-3xl px-8 py-7 sm:px-12 sm:py-9 max-w-sm sm:max-w-md w-full transition-all">
           
           {/* Mascot Animation with Digital Orbit */}
-          <div className="relative w-64 h-48 sm:w-72 sm:h-52 flex items-center justify-center overflow-visible">
+          <div className="relative w-72 h-52 sm:w-80 sm:h-56 flex items-center justify-center overflow-visible">
             {mounted ? (
               <Lottie
                 src={loaderAnimation}
                 loop
                 autoplay
                 className="w-full h-full object-contain pointer-events-none select-none"
+                style={{ width: '100%', height: '100%' }}
               />
             ) : (
               <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-blue-500/20 to-indigo-500/20 animate-pulse flex items-center justify-center">
