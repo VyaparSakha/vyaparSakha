@@ -8,17 +8,22 @@ import cardAnimation from '@/assets/animations/vyparaSakhaLoading/VyaparSakhaLoa
 /**
  * PageLoader
  * ==========
- * Full-screen overlay featuring the official Vyapar Sakha AI animated mascot loader
- * with rotating digital orbit and floating business tiles (Inventory, Sales, Billing, Analytics, AI insights).
+ * Official Vyapar Sakha AI animated mascot loader with rotating digital orbit
+ * and floating business tiles (Inventory, Sales, Billing, Analytics, AI insights).
  *
- * Used after authentication, store transitions, inventory sync, and major screen loads.
+ * Supports three containment modes:
+ * - 'fullscreen': fixed full-screen overlay covering the entire viewport (login, logout, top navigations)
+ * - 'content': embedded right-side loader (min-h-[70vh]) that fits cleanly inside content panes, leaving the sidebar visible and active!
+ * - 'overlay': absolute overlay covering only its parent container (tables, cards, modal panels)
  *
  * @param {string} message - Status or informative message to display below the animation
  * @param {'orbit' | 'card'} variant - Animation display mode (default: 'orbit')
+ * @param {'fullscreen' | 'content' | 'overlay'} containment - Containment mode (default: 'fullscreen')
  */
 const PageLoader = ({ 
   message = 'Preparing your business workspace...', 
-  variant = 'orbit' 
+  variant = 'orbit',
+  containment = 'fullscreen'
 }) => {
   const [mounted, setMounted] = useState(false);
 
@@ -26,19 +31,29 @@ const PageLoader = ({
     setMounted(true);
   }, []);
 
-  return (
-    <div
-      className="fixed inset-0 z-[999] flex flex-col items-center justify-center p-4 selection:bg-blue-500 selection:text-white"
-      style={{
+  const isContent = containment === 'content';
+  const isOverlay = containment === 'overlay';
+
+  const containerClasses = isContent
+    ? "relative w-full min-h-[70vh] flex flex-col items-center justify-center p-4 sm:p-8 rounded-3xl overflow-hidden selection:bg-blue-500 selection:text-white"
+    : isOverlay
+    ? "absolute inset-0 z-30 flex flex-col items-center justify-center p-4 selection:bg-blue-500 selection:text-white"
+    : "fixed inset-0 z-[999] flex flex-col items-center justify-center p-4 selection:bg-blue-500 selection:text-white";
+
+  const containerStyle = isContent
+    ? { background: 'transparent' }
+    : {
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         background: 'rgba(248, 250, 252, 0.72)',
-      }}
-    >
+      };
+
+  return (
+    <div className={containerClasses} style={containerStyle}>
       {/* Ambient glowing backdrop elements */}
-      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-amber-400/15 rounded-full blur-3xl pointer-events-none animate-pulse [animation-delay:800ms]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-72 h-72 sm:w-80 sm:h-80 bg-blue-500/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 sm:w-80 sm:h-80 bg-amber-400/15 rounded-full blur-3xl pointer-events-none animate-pulse [animation-delay:800ms]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 sm:w-96 sm:h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Loader Container */}
       {variant === 'card' ? (
@@ -84,10 +99,10 @@ const PageLoader = ({
               <span className="text-xl font-black tracking-tight text-slate-900">
                 Vyapar<span className="text-amber-500">Sakha</span>
               </span>
-              {/* <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200/60 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200/60 uppercase tracking-wider">
                 <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
                 AI
-              </span> */}
+              </span>
             </div>
             
             <p className="text-xs sm:text-sm font-medium text-slate-600 tracking-normal px-2">

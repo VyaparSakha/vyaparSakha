@@ -17,6 +17,7 @@ import {
   InventorySummarySection,
   SuppliersAndPurchasesSection,
 } from "@/features/overview/components";
+import PageLoader from "@/components/PageLoader";
 
 // In-memory cache across tab/route navigation
 const overviewMemoryCache = new Map();
@@ -291,6 +292,15 @@ const OverviewPage = () => {
       window.removeEventListener("focus", handleFocus);
     };
   }, [storeId, loadOverviewData, applyOverviewData]);
+
+  if (!overview) {
+    return (
+      <PageLoader
+        message="Analyzing store performance & live metrics..."
+        containment="content"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen py-2 sm:py-3 px-2 sm:px-4">

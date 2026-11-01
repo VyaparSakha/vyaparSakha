@@ -33,25 +33,18 @@ const StoreDashboard = () => {
   }, []);
 
   const handleStoreClick = async (store) => {
-    let loaderTriggered = false;
     const startTime = Date.now();
-
-    // Start 1s timer to decide if we show loader
-    storeTimerRef.current = setTimeout(() => {
-      setLoaderMessage('Opening store...');
-      loaderTriggered = true;
-    }, 1000);
+    // Show mascot loader immediately on store card click (0ms delay)
+    setLoaderMessage(`Opening ${store.name || 'store'}...`);
 
     // Initial navigation request
     router.push(`/storeDashboard/${store._id}`);
 
-    // If loader appears, ensure it stays for at least 2 seconds
-    if (loaderTriggered) {
-      const elapsed = Date.now() - startTime;
-      const remainingForMinDisplay = 3000 - elapsed; // 1s wait + 2s display = 3s total
-      if (remainingForMinDisplay > 0) {
-        await new Promise(r => setTimeout(r, remainingForMinDisplay));
-      }
+    // Minimum display duration so user sees the smooth mascot animation
+    const elapsed = Date.now() - startTime;
+    const minDisplayMs = 1200;
+    if (elapsed < minDisplayMs) {
+      await new Promise(r => setTimeout(r, minDisplayMs - elapsed));
     }
   };
 
@@ -126,8 +119,10 @@ const StoreDashboard = () => {
   return (
     <div className="flex flex-col relative selection:bg-blue-500/20 antialiased">
 
-      {/* Page navigation loader — shown when Create New Store is clicked */}
-      {loaderMessage && <PageLoader message={loaderMessage} />}
+      {/* Page navigation or store fetching loader */}
+      {(loaderMessage || loading) && (
+        <PageLoader message={loaderMessage || 'Loading your stores...'} />
+      )}
 
       <main className="relative z-10">
 
