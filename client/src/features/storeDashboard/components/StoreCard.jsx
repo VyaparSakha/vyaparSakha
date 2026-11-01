@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Lottie } from 'lottie-react';
@@ -25,18 +25,50 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
   const deleteRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
 
+  const setToCompleted = useCallback((ref) => {
+    try {
+      ref.current?.pause();
+      ref.current?.seek({ percent: 100 });
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const playFromStart = useCallback((ref) => {
+    try {
+      ref.current?.seek({ percent: 0 });
+      ref.current?.play();
+    } catch (e) {
+      ref.current?.play?.();
+    }
+  }, []);
+
+  useEffect(() => {
+    setToCompleted(shopRef);
+    setToCompleted(parcelRef);
+    setToCompleted(staffRef);
+
+    const timer = setTimeout(() => {
+      setToCompleted(shopRef);
+      setToCompleted(parcelRef);
+      setToCompleted(staffRef);
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [setToCompleted]);
+
   return (
     <div
       onClick={() => onClick?.(store)}
       onMouseEnter={() => {
         setIsHovered(true);
-        shopRef.current?.play();
-        parcelRef.current?.play();
+        playFromStart(shopRef);
+        playFromStart(parcelRef);
       }}
       onMouseLeave={() => {
         setIsHovered(false);
-        shopRef.current?.stop();
-        parcelRef.current?.stop();
+        setToCompleted(shopRef);
+        setToCompleted(parcelRef);
       }}
       className="group relative bg-white border border-slate-200/80 rounded-2xl lg:rounded-[1.5rem] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:border-blue-400/50 transition-all duration-500 cursor-pointer flex flex-col lg:flex-row lg:items-center overflow-hidden h-full lg:h-[180px]"
       style={{ transform: 'translateZ(0)' }}
@@ -125,6 +157,9 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
               src={shopAnimation}
               loop
               autoplay={false}
+              subscriptions={{
+                ready: () => setToCompleted(shopRef)
+              }}
               style={{ width: 110, height: 82 }}
             />
           </div>
@@ -134,6 +169,9 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
               src={parcelAnimation}
               loop
               autoplay={false}
+              subscriptions={{
+                ready: () => setToCompleted(parcelRef)
+              }}
               style={{ width: 110, height: 82 }}
             />
           </div>
@@ -183,8 +221,8 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
           <Link
             href={`/storeDashboard/${store._id}/staff`}
             onClick={(e) => e.stopPropagation()}
-            onMouseEnter={() => staffRef.current?.play()}
-            onMouseLeave={() => staffRef.current?.stop()}
+            onMouseEnter={() => playFromStart(staffRef)}
+            onMouseLeave={() => setToCompleted(staffRef)}
             className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black uppercase tracking-widest text-indigo-600 bg-blue-50/90 border border-blue-100/90 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-200 hover:bg-blue-100/90 hover:border-blue-200 active:scale-95 group/btn"
           >
             <div className="w-7 h-7 flex items-center justify-center shrink-0 overflow-hidden relative">
@@ -194,6 +232,9 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
                   src={staffAnimation}
                   loop
                   autoplay={false}
+                  subscriptions={{
+                    ready: () => setToCompleted(staffRef)
+                  }}
                   style={{ width: 210, height: 158 }}
                 />
               </div>
