@@ -51,10 +51,6 @@ export default function FloatingChatBot() {
     const handleKeyDown = (e) => {
       // 1. Escape: Close open elements
       if (e.key === "Escape") {
-        if (showOptionsMenu) {
-          setShowOptionsMenu(false);
-          return;
-        }
         if (showShortcutsModal) {
           setShowShortcutsModal(false);
           return;
@@ -87,7 +83,6 @@ export default function FloatingChatBot() {
       if (isModifierAI && key === "a") {
         e.preventDefault();
         setIsOpen((prev) => !prev);
-        setShowTooltipHint(false);
         return;
       }
 
@@ -95,7 +90,6 @@ export default function FloatingChatBot() {
       if (isModifierAI && key === "v") {
         e.preventDefault();
         setIsOpen(true);
-        setShowTooltipHint(false);
         setTimeout(() => {
           emitAgentVoiceStart();
         }, 80);
@@ -288,14 +282,28 @@ export default function FloatingChatBot() {
           onClick={() => {
             setIsOpen(true);
           }}
-          className="relative group flex items-center justify-center w-14 h-14 rounded-full shadow-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 active:scale-95 ring-4 ring-blue-500/25 transition-all duration-300"
+          className="relative group flex items-center justify-center w-16 h-16 sm:w-[70px] sm:h-[70px] rounded-full shadow-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 active:scale-95 ring-4 ring-blue-500/25 transition-all duration-300 overflow-hidden"
           aria-label="Open Vyapar AI Copilot (Alt+A)"
           title="Open Vyapar AI Copilot (Alt + A)"
         >
           {/* Ambient Glowing Radar Effect */}
           <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 opacity-40 blur-md group-hover:opacity-75 transition duration-500 animate-pulse -z-10" />
 
-          {/* Bot Icon with Sparkles */}
+          {/* Animated WebM Video Chatbot Avatar (Scaled to fit the robot avatar prominently inside button) */}
+          <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+            <video
+              src="/videos/chatbot/vyaparSakhaChatbot.webm"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              className="w-full h-full object-cover rounded-full pointer-events-none transform scale-[3.4] -translate-y-[46%] transition-transform duration-300 group-hover:scale-[3.7]"
+            />
+          </div>
+
+          {/* Previous SVG Bot Icon with Sparkles - Commented out as requested */}
+          {/*
           <div className="relative flex items-center justify-center">
             <Bot size={26} className="text-white drop-shadow-sm transition-transform group-hover:scale-110" />
             <Sparkles
@@ -303,9 +311,10 @@ export default function FloatingChatBot() {
               className="absolute -top-1 -right-1.5 text-amber-300 animate-bounce"
             />
           </div>
+          */}
 
           {/* Active Status Live Badge */}
-          <span className="absolute top-0 right-0 flex h-3.5 w-3.5">
+          <span className="absolute top-0 right-0 flex h-3.5 w-3.5 z-10">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white" />
           </span>
