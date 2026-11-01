@@ -21,7 +21,7 @@ const DashboardHeader = ({ onCreateStore, filters, updateFilters, refreshStores,
             </p>
           </div>
 
-          <div className="animate-fade-in [animation-delay:200ms] flex items-center gap-2 mt-1 md:mt-0">
+          <div className="flex items-center gap-2 mt-1 md:mt-0">
             {isOwner && (
               <button
                 onClick={onCreateStore}
@@ -32,7 +32,7 @@ const DashboardHeader = ({ onCreateStore, filters, updateFilters, refreshStores,
                   src={createStoreAnimation}
                   loop
                   autoplay
-                  style={{ width: 200, height: 75 }}
+                  style={{ width: 'full', height: 'full' }}
                 />
               </button>
             )}
