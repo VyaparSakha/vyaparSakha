@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Package, ShoppingCart, MapPin, Phone, Mail } from "lucide-react";
+import { ArrowLeft, Package, MapPin, Phone, Mail, Store } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useManualProductAdd } from "../hooks";
 
@@ -39,67 +39,77 @@ export const BillingHeader = ({ storeId, storeName, currentStore, isMobile }) =>
   const storeEmail = currentStore?.email || currentStore?.owner?.email || "";
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-3.5 md:p-4 mb-5">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="flex items-start md:items-center gap-3">
+    <header className="relative overflow-hidden bg-white/95 backdrop-blur-md rounded-2xl md:rounded-3xl shadow-xs border border-slate-200/80 p-3.5 sm:p-4 md:p-5 transition-all">
+      {/* Soft gradient banner accent */}
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-amber-400" />
+
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
+        {/* Store Brand & Back navigation */}
+        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
           {!isMobile && (
             <button
               onClick={() => router.push(`/storeDashboard/${storeId}`)}
-              className="p-2 hover:bg-slate-100 rounded-xl transition-colors flex-shrink-0 text-slate-700 mt-0.5 md:mt-0"
+              className="group p-2 sm:p-2.5 bg-slate-100/80 hover:bg-indigo-50/90 border border-slate-200 hover:border-indigo-200 rounded-xl transition-all duration-200 flex-shrink-0 text-slate-600 hover:text-indigo-600 hover:shadow-xs active:scale-95 mt-0.5 sm:mt-0"
               title="Back to Dashboard"
+              aria-label="Back to Dashboard"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-0.5" />
             </button>
           )}
 
-          <div>
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/25 flex-shrink-0 ring-4 ring-indigo-50">
+            <Store size={20} className="stroke-[2.2]" />
+          </div>
+
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg md:text-xl font-black text-slate-900 flex items-center gap-2 tracking-tight">
-                <ShoppingCart size={20} className="text-indigo-600" />
-                <span>{name}</span>
+              <h1 className="text-base sm:text-lg md:text-xl font-black text-slate-900 tracking-tight truncate max-w-[200px] xs:max-w-xs sm:max-w-none">
+                {name}
               </h1>
-              <span className="text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
-                Billing System
+              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 tracking-wide shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                POS Active
               </span>
             </div>
 
-            {/* Store Address, PIN, Phone & Email Line */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 font-medium mt-1">
+            {/* Store Details: Address, Contact */}
+            <div className="flex flex-col xs:flex-row xs:flex-wrap items-start xs:items-center gap-x-3 gap-y-0.5 text-xs text-slate-500 font-medium mt-1">
               {storeAddressStr && (
-                <span className="flex items-center gap-1">
-                  <MapPin size={13} className="text-indigo-500 shrink-0" />
-                  <span>{storeAddressStr}</span>
+                <span className="flex items-center gap-1.5 min-w-0 max-w-full">
+                  <MapPin size={13} className="text-indigo-400 shrink-0" />
+                  <span className="truncate">{storeAddressStr}</span>
                 </span>
               )}
 
               {storePhone && (
-                <span className="flex items-center gap-1">
-                  <Phone size={13} className="text-indigo-500 shrink-0" />
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <Phone size={13} className="text-indigo-400 shrink-0" />
                   <span>{storePhone}</span>
                 </span>
               )}
 
               {storeEmail && (
-                <span className="flex items-center gap-1">
-                  <Mail size={13} className="text-indigo-500 shrink-0" />
-                  <span>{storeEmail}</span>
+                <span className="flex items-center gap-1.5 min-w-0 max-w-full">
+                  <Mail size={13} className="text-indigo-400 shrink-0" />
+                  <span className="truncate">{storeEmail}</span>
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end">
+        {/* Action Button: Add Product Manually */}
+        <div className="flex items-center justify-start sm:justify-end shrink-0 pt-2 lg:pt-0 border-t lg:border-0 border-slate-100">
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs md:text-sm font-bold text-white transition-all hover:bg-indigo-700 shadow-xs"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-indigo-600/20 hover:shadow-lg hover:shadow-indigo-600/30 transition-all active:scale-95"
           >
             <Package size={16} />
-            Add Product Manually
+            <span>Add Product Manually</span>
           </button>
         </div>
       </div>
-    </div>
+    </header>
   );
 };

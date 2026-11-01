@@ -1,114 +1,149 @@
 "use client";
 
 import { useBillingContext } from "../context/billingContext";
-import { Trash2, Plus, Minus } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, Package } from "lucide-react";
 
 export const BilledProductsList = () => {
   const { billedProducts, removeProduct, updateProductQuantity } =
     useBillingContext();
 
-  if (billedProducts.length === 0) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Current Bill</h2>
-        <div className="text-center py-12 text-gray-400">
-          <p>No products added yet</p>
-          <p className="text-sm mt-2">Scan or add products to start billing</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-      <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">
-        Current Bill ({billedProducts.length} items)
-      </h2>
-
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {billedProducts.map((product) => {
-          const price = product.price || product.sellingPrice || 0;
-          const quantity = product.billedQuantity || 1;
-          const total = price * quantity;
-          const availableQty = product.quantity || product.qty || 0;
-
-          return (
-            <div
-              key={product._id}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 gap-3"
-            >
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-gray-900 text-sm md:text-base truncate">
-                  {product.name}
-                </h3>
-                <p className="text-xs md:text-sm text-gray-500 truncate">
-                  {product.barcode && `Barcode: ${product.barcode}`}
-                  {product.category && ` | ${product.category}`}
-                </p>
-                <p className="text-xs md:text-sm text-gray-400">
-                  Available: {availableQty} units
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
-                {/* Quantity Controls */}
-                <div className="flex items-center gap-1 md:gap-2">
-                  <button
-                    onClick={() =>
-                      updateProductQuantity(product._id, quantity - 1)
-                    }
-                    className="p-1 rounded-full hover:bg-gray-200 disabled:opacity-50 flex-shrink-0"
-                    disabled={quantity <= 1}
-                  >
-                    <Minus size={16} className="w-4 h-4 md:w-4 md:h-4" />
-                  </button>
-
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => {
-                      const newQty = Number.parseInt(e.target.value, 10) || 1;
-                      updateProductQuantity(product._id, newQty);
-                    }}
-                    className="w-12 md:w-16 text-center border border-gray-300 rounded px-1 md:px-2 py-1 text-sm"
-                    min="1"
-                    max={availableQty}
-                  />
-
-                  <button
-                    onClick={() =>
-                      updateProductQuantity(product._id, quantity + 1)
-                    }
-                    className="p-1 rounded-full hover:bg-gray-200 disabled:opacity-50 flex-shrink-0"
-                    disabled={quantity >= availableQty}
-                  >
-                    <Plus size={16} className="w-4 h-4 md:w-4 md:h-4" />
-                  </button>
-                </div>
-
-                {/* Price */}
-                <div className="text-right min-w-[70px] md:min-w-24">
-                  <p className="text-xs md:text-sm text-gray-500">
-                    ₹{price.toFixed(2)} ea
-                  </p>
-                  <p className="font-semibold text-gray-900 text-sm md:text-base">
-                    ₹{total.toFixed(2)}
-                  </p>
-                </div>
-
-                {/* Delete Button */}
-                <button
-                  onClick={() => removeProduct(product._id)}
-                  className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                  title="Remove product"
-                >
-                  <Trash2 size={18} className="md:w-5 md:h-5" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+    <div className="bg-white/95 backdrop-blur-md rounded-2xl md:rounded-3xl shadow-lg shadow-slate-200/50 border border-slate-200/80 overflow-hidden transition-all flex flex-col h-full min-h-[580px]">
+      {/* Table Header */}
+      <div className="p-4 md:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <span>Billed Items</span>
+          </h2>
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-100 text-indigo-700">
+            {billedProducts.length}
+          </span>
+        </div>
+        <span className="text-xs font-medium text-slate-400 hidden sm:inline">
+          Double-check quantity & stock limits
+        </span>
       </div>
+
+      {/* Content Area - Fills equal height with internal scroll or empty state */}
+      {billedProducts.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-500 mb-4">
+            <ShoppingBag size={28} className="stroke-[1.8]" />
+          </div>
+          <h3 className="text-base font-bold text-slate-800">Your Billing Cart is Empty</h3>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-sm">
+            Scan barcodes using your scanner or search products above to start building the bill
+          </p>
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100 flex-1 overflow-y-auto">
+          {billedProducts.map((product) => {
+            const price = product.price || product.sellingPrice || 0;
+            const quantity = product.billedQuantity || 1;
+            const total = price * quantity;
+            const availableQty = product.quantity || product.qty || 0;
+
+            return (
+              <div
+                key={product._id}
+                className="p-3.5 sm:p-4 hover:bg-slate-50/70 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+              >
+                {/* Product Info */}
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400 overflow-hidden">
+                    {product.image ? (
+                      <img src={product.image} alt="" className="w-full h-full object-contain" />
+                    ) : (
+                      <Package size={18} />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-slate-900 text-sm truncate">
+                      {product.name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
+                      {product.barcode && (
+                        <span className="font-mono text-[11px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                          {product.barcode}
+                        </span>
+                      )}
+                      {product.category && (
+                        <span className="text-[11px] text-slate-500">
+                          {product.category}
+                        </span>
+                      )}
+                      <span className="text-[11px] text-emerald-600 font-medium">
+                        In Stock: {availableQty}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Controls, Pricing & Remove */}
+                <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
+                  {/* Quantity Stepper */}
+                  <div className="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200/60">
+                    <button
+                      onClick={() =>
+                        updateProductQuantity(product._id, quantity - 1)
+                      }
+                      className="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all disabled:opacity-40 disabled:hover:bg-white shadow-xs"
+                      disabled={quantity <= 1}
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus size={14} className="stroke-[2.5]" />
+                    </button>
+
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => {
+                        const newQty = Number.parseInt(e.target.value, 10) || 1;
+                        updateProductQuantity(product._id, newQty);
+                      }}
+                      className="w-11 sm:w-12 text-center bg-transparent font-bold text-slate-900 text-sm focus:outline-none"
+                      min="1"
+                      max={availableQty}
+                    />
+
+                    <button
+                      onClick={() =>
+                        updateProductQuantity(product._id, quantity + 1)
+                      }
+                      className="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all disabled:opacity-40 disabled:hover:bg-white shadow-xs"
+                      disabled={quantity >= availableQty}
+                      aria-label="Increase quantity"
+                    >
+                      <Plus size={14} className="stroke-[2.5]" />
+                    </button>
+                  </div>
+
+                  {/* Price Display */}
+                  <div className="text-right min-w-[80px]">
+                    <p className="text-[11px] text-slate-400 font-medium">
+                      ₹{price.toFixed(2)} × {quantity}
+                    </p>
+                    <p className="font-black text-slate-900 text-sm sm:text-base tracking-tight">
+                      ₹{total.toFixed(2)}
+                    </p>
+                  </div>
+
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => removeProduct(product._id)}
+                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                    title="Remove from bill"
+                    aria-label="Remove item"
+                  >
+                    <Trash2 size={17} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

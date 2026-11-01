@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { ScanBarcode, Camera, Plus, Zap } from "lucide-react";
 import { useBarcodeScanner } from "../hooks";
 import { useBillingContext } from "../context/billingContext";
 
@@ -28,98 +29,72 @@ export const BarcodeInput = () => {
     await handleBarcodeInput(barcode);
   };
 
-  // Mobile Scanning Mode - Beautiful Responsive Centered Design
+  // Mobile Scanning Mode - Clean Centered Design
   if (isMobile) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-3 sm:px-4 md:px-6 py-4 sm:py-8">
-        <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl">
+      <div className="min-h-[85vh] flex items-center justify-center px-3 py-6">
+        <div className="w-full max-w-sm">
           {/* Title */}
-          <div className="text-center mb-6 sm:mb-8 md:mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-3 sm:mb-4 shadow-lg">
-              <svg
-                className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                />
-              </svg>
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 rounded-3xl mb-3 shadow-xl shadow-indigo-500/25">
+              <ScanBarcode className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-              Scan or Enter Barcode
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Scan Barcode
             </h1>
-            <p className="text-sm sm:text-base md:text-lg text-gray-500 px-2">
-              Use your scanner device or camera to add products
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Use a physical scanner or your phone camera to add products
             </p>
           </div>
 
           {/* Input Card */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 border border-gray-100">
-            <input
-              type="text"
-              value={scannedBarcode}
-              onChange={(e) => setScannedBarcode(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Scan or type barcode..."
-              className="w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl border-2 border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-center font-mono tracking-wider"
-              disabled={loading || isScanning}
-              autoFocus
-            />
+          <div className="bg-white rounded-3xl shadow-xl p-5 border border-slate-100 space-y-4">
+            <div className="relative">
+              <input
+                type="text"
+                value={scannedBarcode}
+                onChange={(e) => setScannedBarcode(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Scan or type barcode..."
+                className="w-full px-4 py-3.5 text-base font-mono border-2 border-slate-200 focus:border-indigo-600 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all text-center tracking-wider text-slate-900 placeholder:text-slate-400 placeholder:font-sans"
+                disabled={loading || isScanning}
+                autoFocus
+              />
+            </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mt-3 sm:mt-4 md:mt-5">
+            <div className="grid grid-cols-2 gap-2.5">
               <button
                 onClick={() => setScannerOpen(true)}
                 disabled={loading || isScanning}
-                className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 md:py-5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg sm:rounded-xl hover:from-purple-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl active:scale-95 sm:transform sm:hover:-translate-y-0.5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 font-semibold text-sm sm:text-base md:text-lg"
+                className="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 font-bold text-sm disabled:opacity-50"
                 title="Open Camera Scanner"
               >
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
+                <Camera size={18} />
                 <span>Camera</span>
               </button>
 
               <button
                 onClick={() => handleBarcodeInput(scannedBarcode)}
                 disabled={loading || isScanning || !scannedBarcode}
-                className="px-3 sm:px-4 md:px-5 py-3 sm:py-4 md:py-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl active:scale-95 sm:transform sm:hover:-translate-y-0.5 font-semibold text-sm sm:text-base md:text-lg"
+                className="px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl transition-all shadow-md shadow-indigo-500/20 active:scale-95 font-bold text-sm disabled:opacity-40"
               >
                 {isScanning ? (
                   <span className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-white border-t-transparent"></div>
-                    <span className="hidden xs:inline">Adding...</span>
-                    <span className="xs:hidden">...</span>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Adding...</span>
                   </span>
                 ) : (
-                  <span>Add Product</span>
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Plus size={18} />
+                    <span>Add Item</span>
+                  </span>
                 )}
               </button>
             </div>
 
-            <div className="mt-3 sm:mt-4 md:mt-5 pt-3 sm:pt-4 border-t border-gray-100">
-              <p className="text-xs sm:text-sm md:text-base text-center text-gray-500">
-                💡 Scan barcode with device or tap Camera to use phone camera
+            <div className="pt-3 border-t border-slate-100 text-center">
+              <p className="text-[11px] text-slate-400 font-medium">
+                Tip: Hardware barcode guns submit automatically via Enter key
               </p>
             </div>
           </div>
@@ -136,67 +111,71 @@ export const BarcodeInput = () => {
     );
   }
 
-  // Desktop/Laptop Mode - Original Compact Design
+  // Desktop/Laptop Mode - Matched Height Container with Soft Shadow
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-      <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">
-        Scan or Enter Barcode
-      </h2>
+    <div className="h-full bg-white/95 backdrop-blur-md rounded-2xl md:rounded-3xl shadow-lg shadow-slate-200/50 border border-slate-200/80 p-5 md:p-6 transition-all flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2.5 tracking-tight">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-xs">
+              <ScanBarcode size={17} />
+            </div>
+            <span>Barcode Scanner</span>
+          </h2>
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+            <Zap size={11} className="text-amber-500 fill-amber-500" />
+            Scanner Ready
+          </span>
+        </div>
 
-      <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
-        <input
-          type="text"
-          value={scannedBarcode}
-          onChange={(e) => setScannedBarcode(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Scan barcode or enter manually..."
-          className="flex-1 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
-          disabled={loading || isScanning}
-          autoFocus
-        />
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={scannedBarcode}
+              onChange={(e) => setScannedBarcode(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Scan barcode or type code..."
+              className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 focus:border-indigo-600 focus:bg-white rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 text-sm font-mono tracking-wider transition-all placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 text-slate-900"
+              disabled={loading || isScanning}
+              autoFocus
+            />
+          </div>
 
-        <div className="flex gap-2 md:gap-3">
-          <button
-            onClick={() => setScannerOpen(true)}
-            disabled={loading || isScanning}
-            className="flex-1 sm:flex-initial px-3 md:px-4 py-2.5 md:py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
-            title="Open Camera Scanner"
-          >
-            <svg
-              className="w-4 h-4 md:w-5 md:h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => setScannerOpen(true)}
+              disabled={loading || isScanning}
+              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs font-bold active:scale-95 disabled:opacity-40"
+              title="Open Camera Scanner"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span className="sm:hidden">Scan</span>
-            <span className="hidden sm:inline">Camera</span>
-          </button>
+              <Camera size={16} className="text-slate-600" />
+              <span className="hidden sm:inline">Camera</span>
+            </button>
 
-          <button
-            onClick={() => handleBarcodeInput(scannedBarcode)}
-            disabled={loading || isScanning || !scannedBarcode}
-            className="flex-1 sm:flex-initial px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm md:text-base font-medium"
-          >
-            {isScanning ? "Adding..." : "Add"}
-          </button>
+            <button
+              onClick={() => handleBarcodeInput(scannedBarcode)}
+              disabled={loading || isScanning || !scannedBarcode}
+              className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-xs transition-all font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isScanning ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Adding...</span>
+                </>
+              ) : (
+                <>
+                  <Plus size={16} />
+                  <span>Add</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
-      <p className="text-xs md:text-sm text-gray-500 mt-2">
-        Use camera scanner, type manually, or use barcode scanner device
+      <p className="text-[11px] text-slate-400 mt-2.5 font-medium">
+        Ready for laser / USB barcode readers or direct SKU entry
       </p>
 
       {/* Camera Scanner Modal */}
