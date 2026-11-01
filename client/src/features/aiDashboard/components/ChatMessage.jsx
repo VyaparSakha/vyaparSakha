@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -537,16 +537,43 @@ export function ToolResultView({ result }) {
 ========================================================= */
 
 export function AIAvatar({ streaming = false, size = 28, state = null }) {
-  const mascotState = state || (streaming ? "thinking" : "idle");
+  const [celebrating, setCelebrating] = useState(false);
+  const wasStreamingRef = useRef(streaming);
+
+  useEffect(() => {
+    if (wasStreamingRef.current && !streaming) {
+      setCelebrating(true);
+      const timer = setTimeout(() => {
+        setCelebrating(false);
+      }, 1800);
+      wasStreamingRef.current = streaming;
+      return () => clearTimeout(timer);
+    }
+    wasStreamingRef.current = streaming;
+  }, [streaming]);
+
+  let mascotState = state;
+  if (!mascotState) {
+    if (streaming) {
+      mascotState = "thinking";
+    } else if (celebrating) {
+      mascotState = "success";
+    } else {
+      mascotState = "idle";
+    }
+  }
 
   return (
     <div
       aria-hidden="true"
-      className="relative flex-shrink-0 inline-flex items-center justify-center rounded-full overflow-hidden shadow-sm"
+      className="relative flex-shrink-0 inline-flex items-center justify-center rounded-full overflow-hidden shadow-sm transition-transform duration-300 hover:scale-105"
       style={{ width: size, height: size }}
     >
       <VyapariMascot
         state={mascotState}
+        onComplete={() => {
+          if (celebrating) setCelebrating(false);
+        }}
         className="w-full h-full flex items-center justify-center"
       />
     </div>
@@ -672,7 +699,7 @@ function CodeBlock({ children, className }) {
 
 function MarkdownRenderer({ content, className = "", isStreaming = false }) {
     return (
-      <div className={`prose-sm max-w-none text-slate-800 ${className}`}>
+      <div className={`prose-sm max-w-none text-slate-800 ${className} ${isStreaming ? "ai-streaming-content" : ""}`}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[[rehypeHighlight, { ignoreMissing: true }]]}
@@ -827,6 +854,23 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
         {isStreaming && (
           <span className="inline-block w-2 h-4 ml-1.5 align-middle bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-sm animate-pulse shadow-sm" />
         )}
+
+        <style>{`
+          @keyframes streamFade {
+            from {
+              opacity: 0.55;
+              transform: translateY(2px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .ai-streaming-content p:last-child,
+          .ai-streaming-content li:last-child {
+            animation: streamFade 0.22s ease-out forwards;
+          }
+        `}</style>
       </div>
     );
   }
@@ -1231,7 +1275,7 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
           <div className="w-full min-w-0 max-w-full flex flex-col gap-2">
             {/* Header row: Blue circle sign (AIAvatar) + Title directly above the content */}
             <div className="flex items-center gap-2.5 px-0.5">
-              <AIAvatar streaming={isStreaming} state={message.error ? "error" : (isStreaming ? "thinking" : "idle")} size={28} />
+              <AIAvatar streaming={isStreaming} state={message.error ? "error" : null} size={28} />
               
               {/* {isStreaming ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 border border-indigo-200/60">

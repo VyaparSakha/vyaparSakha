@@ -5,6 +5,7 @@ import { streamCopilotResponse, fetchChatMessages, streamClarifyResponse } from 
 import { clearSessionId, clearChatId, setChatId } from "@/servies/api";
 import { emitAgentRefresh, emitAgentNavigate, onAgentVoiceToggle, onAgentVoiceStart, emitAgentStatus } from "@/servies/agentEventBus";
 import { ChatMessage, ThinkingIndicator } from "../ChatMessage";
+import VyapariMascot from "../VyapariMascot";
 import AttachmentModal from "../AttachmentModal";
 import ClarificationBanner from "../ClarificationBanner";
 import CartoonVoiceBotView from "../CartoonVoiceBotView";
@@ -1265,22 +1266,38 @@ const AskCopilotSection = ({
             <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pb-4">
               {!messages.length && !loading ? (
                 <div className="flex h-full flex-col items-center justify-center gap-6 px-4 py-8 text-center max-w-xl mx-auto">
-                  <div className="space-y-2 max-w-md">
-                    <h2 className="text-3xl font-black tracking-tight">
-                      <span className="bg-gradient-to-r from-slate-800 via-indigo-900 to-blue-700 bg-clip-text text-transparent">
-                        Ask Vyapar Sakha
-                      </span>
-                    </h2>
+                  <div className="flex flex-col items-center gap-3 max-w-md">
+                    {/* Waving Mascot with Ambient Glow */}
+                    <div className="relative flex items-center justify-center">
+                      <span className="absolute -inset-2 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-violet-500/20 blur-lg animate-pulse" />
+                      <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-full overflow-hidden shadow-xl shadow-indigo-500/20 ring-4 ring-indigo-500/20 bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600">
+                        <VyapariMascot state="greeting" loop={true} className="w-full h-full" />
+                      </div>
+                    </div>
+
+                    {/* Speech Bubble Greeting */}
+                    <div className="relative mt-2 rounded-2xl bg-white px-5 py-3 shadow-md border border-slate-200/80 text-center max-w-xs sm:max-w-sm">
+                      {/* Speech bubble pointer arrow */}
+                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-t border-l border-slate-200/80 rotate-45" />
+                      <p className="relative z-10 text-sm font-bold text-slate-800">
+                        {"\u0928\u092E\u0938\u094D\u0924\u0947! \u0906\u091C \u0906\u092A\u0915\u0947 \u0935\u094D\u092F\u093E\u092A\u093E\u0930 \u092E\u0947\u0902 \u0915\u094D\u092F\u093E \u092E\u0926\u0926 \u0915\u0930\u0942\u0901?"}
+                      </p>
+                      <p className="relative z-10 text-xs text-slate-500 mt-0.5">
+                        Hello! How can I help your business today?
+                      </p>
+                    </div>
                   </div>
+
                   <div className="flex flex-col gap-3 w-full max-w-md">
                     {SUGGESTED_PROMPTS.map((prompt) => (
                       <SuggestionChip key={prompt.text} prompt={prompt} icon={prompt.icon} disabled={loading} />
                     ))}
                   </div>
+
                   <div className="flex items-center gap-2 text-xs text-slate-400">
                     <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Enter</kbd>
                     <span>to send</span>
-                    <span className="text-slate-300">·</span>
+                    <span className="text-slate-300">&middot;</span>
                     <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-mono">Shift+Enter</kbd>
                     <span>for new line</span>
                   </div>
