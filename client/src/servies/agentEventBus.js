@@ -31,6 +31,7 @@ const REFRESH_EVENT = "agent:refresh";
 const NAVIGATE_EVENT = "agent:navigate";
 const VOICE_TOGGLE_EVENT = "agent:voice:toggle";
 const VOICE_START_EVENT = "agent:voice:start";
+const STATUS_EVENT = "agent:status";
 
 /**
  * Emit a toggle voice mode command.
@@ -114,4 +115,27 @@ export function onAgentNavigate(handler) {
   const listener = (e) => handler(e.detail);
   window.addEventListener(NAVIGATE_EVENT, listener);
   return () => window.removeEventListener(NAVIGATE_EVENT, listener);
+}
+
+/**
+ * Emit an agent state/status change signal (e.g. "idle" | "greeting" | "thinking" | "success" | "happy" | "error" | "notification").
+ * @param {string} status
+ */
+export function emitAgentStatus(status) {
+  if (typeof window === "undefined" || !status) return;
+  window.dispatchEvent(
+    new CustomEvent(STATUS_EVENT, { detail: { status } })
+  );
+}
+
+/**
+ * Subscribe to agent status changes.
+ * @param {(payload: { status: string }) => void} handler
+ * @returns {() => void} Unsubscribe function.
+ */
+export function onAgentStatus(handler) {
+  if (typeof window === "undefined") return () => {};
+  const listener = (e) => handler(e.detail);
+  window.addEventListener(STATUS_EVENT, listener);
+  return () => window.removeEventListener(STATUS_EVENT, listener);
 }

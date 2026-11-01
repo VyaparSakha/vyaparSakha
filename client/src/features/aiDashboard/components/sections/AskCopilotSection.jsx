@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { streamCopilotResponse, fetchChatMessages, streamClarifyResponse } from "../../services/aiDashboardService";
 import { clearSessionId, clearChatId, setChatId } from "@/servies/api";
-import { emitAgentRefresh, emitAgentNavigate, onAgentVoiceToggle, onAgentVoiceStart } from "@/servies/agentEventBus";
+import { emitAgentRefresh, emitAgentNavigate, onAgentVoiceToggle, onAgentVoiceStart, emitAgentStatus } from "@/servies/agentEventBus";
 import { ChatMessage, ThinkingIndicator } from "../ChatMessage";
 import AttachmentModal from "../AttachmentModal";
 import ClarificationBanner from "../ClarificationBanner";
@@ -443,6 +443,7 @@ const AskCopilotSection = ({
       setIsLiveCallActive(true);
       isLiveCallActiveRef.current = true;
       setShowSuggestions(false);
+      emitAgentStatus("thinking");
 
       // Stop browser SpeechRecognition to prevent mobile chime beeps ("tiu tiu") during socket voice stream
       if (recognitionRef.current) {
@@ -517,6 +518,7 @@ const AskCopilotSection = ({
 
           if (isLiveCallActiveRef.current) {
             setShowSuggestions(false);
+      emitAgentStatus("thinking");
 
             if (latestFinal.trim()) {
               const finalText = latestFinal.trim();
@@ -821,6 +823,7 @@ const AskCopilotSection = ({
       setError("");
       setLoading(true);
       setShowSuggestions(false);
+      emitAgentStatus("thinking");
       activeStreamingChatIdRef.current = chatId || "pending";
       toolCallsRef.current = [];
       accumulatedTextRef.current = "";
@@ -897,6 +900,7 @@ const AskCopilotSection = ({
             if (event === "done") {
               activeStreamingChatIdRef.current = null;
               updateAssistantMeta(assistantId, payload || null);
+              emitAgentStatus("success");
               setLoading(false);
               abortRef.current = null;
               if (accumulatedTextRef.current) {
@@ -910,6 +914,7 @@ const AskCopilotSection = ({
               const errorMessage = payload?.message || "Copilot stream failed.";
               setError(errorMessage);
               updateAssistantError(assistantId, errorMessage);
+              emitAgentStatus("error");
               setLoading(false);
               abortRef.current = null;
             }
@@ -1024,6 +1029,7 @@ const AskCopilotSection = ({
             }
             if (event === "done") {
               updateAssistantMeta(assistantId, payload || null);
+              emitAgentStatus("success");
               setLoading(false);
               abortRef.current = null;
               setClarification((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
@@ -1036,6 +1042,7 @@ const AskCopilotSection = ({
               const errorMessage = payload?.message || "Clarify stream failed.";
               setError(errorMessage);
               updateAssistantError(assistantId, errorMessage);
+              emitAgentStatus("error");
               setLoading(false);
               abortRef.current = null;
               setClarification((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
@@ -1043,6 +1050,7 @@ const AskCopilotSection = ({
             }
             if (event === "clarification") {
               updateAssistantMeta(assistantId, payload || null);
+              emitAgentStatus("success");
               setLoading(false);
               abortRef.current = null;
               setClarification({

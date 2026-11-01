@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import AskCopilotSection from "./sections/AskCopilotSection";
 import ChatHistorySidebar from "./ChatHistorySidebar";
 import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
+import VyapariMascot from "./VyapariMascot";
 import { getChatId, setChatId } from "@/servies/api";
-import { emitAgentVoiceStart } from "@/servies/agentEventBus";
-import { Bot, Sparkles } from "lucide-react";
+import { emitAgentVoiceStart, onAgentStatus } from "@/servies/agentEventBus";
 
 export default function FloatingChatBot() {
   const { isAuthenticated } = useAuth();
@@ -35,8 +35,51 @@ export default function FloatingChatBot() {
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
+  // Dynamic Lottie Mascot State: "idle" | "greeting" | "thinking" | "success" | "happy" | "error" | "notification"
+  const [mascotState, setMascotState] = useState("greeting");
+  const revertTimerRef = useRef(null);
+
   useEffect(() => {
     setChatKey(getChatId());
+  }, []);
+
+  // Initial mount greeting: plays greeting for 2.4s then settles into idle
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMascotState("idle");
+    }, 2400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Listen to Copilot status signals across the platform:
+  // - "thinking": AI actively reasoning / loading / streaming
+  // - "success": Response successfully generated
+  // - "error": Response failed or connection error
+  // - "notification": System or inventory notification
+  useEffect(() => {
+    const unsub = onAgentStatus(({ status }) => {
+      if (!status) return;
+      if (revertTimerRef.current) clearTimeout(revertTimerRef.current);
+
+      setMascotState(status);
+
+      // Auto-revert one-shot animations to idle after duration
+      if (
+        status === "success" ||
+        status === "happy" ||
+        status === "error" ||
+        status === "notification"
+      ) {
+        revertTimerRef.current = setTimeout(() => {
+          setMascotState("idle");
+        }, 2400);
+      }
+    });
+
+    return () => {
+      unsub();
+      if (revertTimerRef.current) clearTimeout(revertTimerRef.current);
+    };
   }, []);
 
   // Global Keyboard Shortcuts handler:
@@ -281,40 +324,39 @@ export default function FloatingChatBot() {
           type="button"
           onClick={() => {
             setIsOpen(true);
+            if (mascotState === "idle") {
+              setMascotState("happy");
+            }
           }}
-          className="relative group flex items-center justify-center w-16 h-16 sm:w-[70px] sm:h-[70px] rounded-full shadow-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 active:scale-95 ring-4 ring-blue-500/25 transition-all duration-300 overflow-hidden"
+          onMouseEnter={() => {
+            // Hover condition: wave/greet the user
+            if (mascotState === "idle") {
+              setMascotState("greeting");
+            }
+          }}
+          className="relative group flex items-center justify-center w-16 h-16 sm:w-[70px] sm:h-[70px] rounded-full shadow-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 active:scale-95 ring-4 ring-blue-500/25 transition-all duration-300"
           aria-label="Open Vyapar AI Copilot (Alt+A)"
           title="Open Vyapar AI Copilot (Alt + A)"
         >
           {/* Ambient Glowing Radar Effect */}
           <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 opacity-40 blur-md group-hover:opacity-75 transition duration-500 animate-pulse -z-10" />
 
-          {/* Animated WebM Video Chatbot Avatar (Scaled to fit the robot avatar prominently inside button) */}
-          <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center">
-            <video
-              src="/videos/chatbot/vyaparSakhaChatbot.webm"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-              className="w-full h-full object-cover rounded-full pointer-events-none transform scale-[3.4] -translate-y-[46%] transition-transform duration-300 group-hover:scale-[3.7]"
+          {/* Dynamic Lottie Mascot Animation */}
+          <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center pointer-events-none transform transition-transform duration-300 group-hover:scale-105">
+            <VyapariMascot
+              state={mascotState}
+              onComplete={() => {
+                // Once a one-shot animation finishes, gracefully return to idle loop
+                if (mascotState !== "idle" && mascotState !== "thinking") {
+                  setMascotState("idle");
+                }
+              }}
+              className="w-full h-full flex items-center justify-center"
             />
           </div>
-
-          {/* Previous SVG Bot Icon with Sparkles - Commented out as requested */}
-          {/*
-          <div className="relative flex items-center justify-center">
-            <Bot size={26} className="text-white drop-shadow-sm transition-transform group-hover:scale-110" />
-            <Sparkles
-              size={12}
-              className="absolute -top-1 -right-1.5 text-amber-300 animate-bounce"
-            />
-          </div>
-          */}
 
           {/* Active Status Live Badge */}
-          <span className="absolute top-0 right-0 flex h-3.5 w-3.5 z-10">
+          <span className="absolute top-0 right-0 flex h-3.5 w-3.5 z-10 pointer-events-none">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white" />
           </span>
