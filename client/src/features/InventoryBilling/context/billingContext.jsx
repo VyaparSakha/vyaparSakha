@@ -41,10 +41,19 @@ export const BillingProvider = ({ children }) => {
   const storeId = params.storeId;
 
   const [loading, setLoading] = useState(false);
+  const [isBillingProcessing, setIsBillingProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [scannedBarcode, setScannedBarcode] = useState("");
   const [storeProducts, setStoreProducts] = useState([]);
   const [lastBillData, setLastBillData] = useState(null);
+  const [showBillPreview, setShowBillPreview] = useState(false);
+  const [generatedBill, setGeneratedBill] = useState(null);
+
+  const closeBillPreview = useCallback(() => {
+    setShowBillPreview(false);
+    setGeneratedBill(null);
+    setLastBillData(null);
+  }, []);
   const [manualProductOpen, setManualProductOpen] = useState(false);
 
   // Real-time sync states
@@ -74,6 +83,8 @@ export const BillingProvider = ({ children }) => {
     setScannedBarcode("");
     setError(null);
     setLastBillData(null);
+    setShowBillPreview(false);
+    setGeneratedBill(null);
 
     console.log("🔄 Billing page reset - all data cleared");
 
@@ -369,6 +380,7 @@ export const BillingProvider = ({ children }) => {
         return false;
       } finally {
         setLoading(false);
+        setIsBillingProcessing(false);
       }
     },
     [storeId, billedProducts, isMobile, syncEnabled, sessionId],
@@ -526,6 +538,8 @@ export const BillingProvider = ({ children }) => {
 
       try {
         setLoading(true);
+        setIsBillingProcessing(true);
+        const startTime = Date.now();
         setError(null);
 
         let buyerId = null;
@@ -633,14 +647,23 @@ export const BillingProvider = ({ children }) => {
 
         // Save bill data for PDF download / preview
         // Merge server response (has _id, billNumber) with local billData (has full details)
-        setLastBillData(bill ? { ...billData, ...bill } : billData);
+        const elapsed = Date.now() - startTime;
+        const minPrintDuration = 2500;
+        if (elapsed < minPrintDuration) {
+          await new Promise((resolve) => setTimeout(resolve, minPrintDuration - elapsed));
+        }
+
+        const savedBill = bill ? { ...billData, ...bill } : { ...billData, offline: true };
+        setLastBillData(savedBill);
+        setGeneratedBill(savedBill);
+        setShowBillPreview(true);
 
         // Clear the bill
         setBilledProducts([]);
         setDiscount({ type: "fixed", value: 0 });
         setCustomerDetails({ name: "", phone: "", email: "" });
 
-        return bill || { ...billData, offline: true };
+        return savedBill;
       } catch (err) {
         const msg = err?.message || err?.error || "Failed to process bill";
         setError(msg);
@@ -649,6 +672,7 @@ export const BillingProvider = ({ children }) => {
         return null;
       } finally {
         setLoading(false);
+        setIsBillingProcessing(false);
       }
     },
     [billedProducts, storeId, user?.uid, calculateTotal, saveBillOffline, clearSession, customerDetails],
@@ -681,6 +705,13 @@ export const BillingProvider = ({ children }) => {
       scannedBarcode,
       storeProducts,
       lastBillData,
+      isBillingProcessing,
+      setIsBillingProcessing,
+      showBillPreview,
+      setShowBillPreview,
+      generatedBill,
+      setGeneratedBill,
+      closeBillPreview,
       manualProductOpen,
       setManualProductOpen,
       customerDetails,
@@ -715,6 +746,12 @@ export const BillingProvider = ({ children }) => {
       scannedBarcode,
       storeProducts,
       lastBillData,
+      isBillingProcessing,
+      showBillPreview,
+      setShowBillPreview,
+      generatedBill,
+      setGeneratedBill,
+      closeBillPreview,
       manualProductOpen,
       customerDetails,
       syncEnabled,

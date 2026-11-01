@@ -5,23 +5,43 @@ import { useBillingContext } from "../context/billingContext";
  * Custom hook for bill processing and payment
  */
 export const useBillPayment = () => {
-  const { processBill, calculateTotal, billedProducts } = useBillingContext();
+  const billingContext = useBillingContext() || {};
+  const {
+    processBill,
+    calculateTotal = () => 0,
+    billedProducts = [],
+    showBillPreview: ctxShowBillPreview,
+    setShowBillPreview: ctxSetShowBillPreview,
+    generatedBill: ctxGeneratedBill,
+    setGeneratedBill: ctxSetGeneratedBill,
+    closeBillPreview: ctxCloseBillPreview,
+  } = billingContext;
+
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [generatedBill, setGeneratedBill] = useState(null);
-  const [showBillPreview, setShowBillPreview] = useState(false);
+  const [localGeneratedBill, setLocalGeneratedBill] = useState(null);
+  const [localShowBillPreview, setLocalShowBillPreview] = useState(false);
+
+  // Use context state if available, otherwise fallback to local state
+  const generatedBill = ctxGeneratedBill !== undefined ? ctxGeneratedBill : localGeneratedBill;
+  const setGeneratedBill = ctxSetGeneratedBill || setLocalGeneratedBill;
+  const showBillPreview = ctxShowBillPreview !== undefined ? ctxShowBillPreview : localShowBillPreview;
+  const setShowBillPreview = ctxSetShowBillPreview || setLocalShowBillPreview;
 
   const handlePayment = useCallback(async () => {
+    if (!processBill) return null;
     setIsProcessing(true);
-    const bill = await processBill(paymentMethod);
-
-    if (bill) {
-      setGeneratedBill(bill);
-      setShowBillPreview(true);
+    try {
+      const bill = await processBill(paymentMethod);
+      if (bill) {
+        setGeneratedBill(bill);
+        setShowBillPreview(true);
+      }
+      return bill;
+    } finally {
+      setIsProcessing(false);
     }
-
-    setIsProcessing(false);
-  }, [paymentMethod, processBill]);
+  }, [paymentMethod, processBill, setGeneratedBill, setShowBillPreview]);
 
   const printBill = useCallback(() => {
     if (!generatedBill) return;
@@ -36,9 +56,13 @@ export const useBillPayment = () => {
   }, [generatedBill]);
 
   const closeBillPreview = useCallback(() => {
-    setShowBillPreview(false);
-    setGeneratedBill(null);
-  }, []);
+    if (ctxCloseBillPreview) {
+      ctxCloseBillPreview();
+    } else {
+      setShowBillPreview(false);
+      setGeneratedBill(null);
+    }
+  }, [ctxCloseBillPreview, setShowBillPreview, setGeneratedBill]);
 
   return {
     paymentMethod,
@@ -46,7 +70,9 @@ export const useBillPayment = () => {
     isProcessing,
     handlePayment,
     generatedBill,
+    setGeneratedBill,
     showBillPreview,
+    setShowBillPreview,
     printBill,
     closeBillPreview,
     totalAmount: calculateTotal(),
@@ -100,72 +126,44 @@ const generateBillHTML = (bill) => {
           padding: 5px 0;
           font-size: 11px;
         }
-        .right {
-          text-align: right;
-        }
-        .total-section {
-          border-top: 2px solid #000;
+        .total {
+          border-top: 2px dashed #000;
           margin-top: 10px;
           padding-top: 10px;
           font-weight: bold;
-        }
-        .footer {
-          text-align: center;
-          margin-top: 20px;
-          border-top: 2px dashed #000;
-          padding-top: 10px;
-          font-size: 11px;
         }
       </style>
     </head>
     <body>
       <div class="header">
-        <div class="store-name">${storeInfo?.name || "Store Name"}</div>
-        <div class="bill-info">Bill #: ${billNumber || "N/A"}</div>
-        <div class="bill-info">Date: ${new Date(billedAt).toLocaleString()}</div>
+        <div class="store-name">${storeInfo?.name || "Vyapar Sakha"}</div>
+        <div class="bill-info">Bill #${billNumber || "N/A"}</div>
+        <div class="bill-info">${new Date(billedAt).toLocaleString()}</div>
       </div>
-      
       <table>
         <thead>
           <tr>
             <th>Item</th>
-            <th class="right">Qty</th>
-            <th class="right">Price</th>
-            <th class="right">Total</th>
+            <th>Qty</th>
+            <th>Amount</th>
           </tr>
         </thead>
         <tbody>
           ${products
-            .map(
+            ?.map(
               (p) => `
             <tr>
               <td>${p.name}</td>
-              <td class="right">${p.quantity}</td>
-              <td class="right">₹${p.price.toFixed(2)}</td>
-              <td class="right">₹${p.total.toFixed(2)}</td>
+              <td>${p.quantity}</td>
+              <td>₹${p.total}</td>
             </tr>
           `,
             )
             .join("")}
         </tbody>
       </table>
-      
-      <div class="total-section">
-        <table>
-          <tr>
-            <td>Total Items:</td>
-            <td class="right">${products.length}</td>
-          </tr>
-          <tr>
-            <td>Total Amount:</td>
-            <td class="right">₹${totalAmount.toFixed(2)}</td>
-          </tr>
-        </table>
-      </div>
-      
-      <div class="footer">
-        Thank you for your purchase!<br>
-        Visit us again!
+      <div class="total">
+        <div>Total: ₹${totalAmount}</div>
       </div>
     </body>
     </html>

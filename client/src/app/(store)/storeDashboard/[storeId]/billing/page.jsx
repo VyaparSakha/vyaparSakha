@@ -14,6 +14,7 @@ import {
   BillingHeader,
   BillHistory,
   BillingSyncIndicator,
+  BillingProcessingModal,
 } from "@/features/InventoryBilling/components";
 
 /**
@@ -22,7 +23,7 @@ import {
 const BillingContent = () => {
   const params = useParams();
   const storeId = params.storeId;
-  const { currentStore, loading, error, isMobile } = useBillingContext();
+  const { currentStore, loading, isBillingProcessing, error, isMobile } = useBillingContext();
 
   return (
     <div className="min-h-screen p-3 md:p-6">
@@ -69,18 +70,24 @@ const BillingContent = () => {
         <ManualProductModal />
         <BillPreviewModal />
 
-        {/* Loading Overlay - Show lighter indicator for mobile scanning */}
-        {loading && !isMobile && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-40">
-            <div className="bg-white rounded-lg p-6 shadow-xl">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-700 font-medium">Processing...</p>
+        {/* Dedicated Billing-in-Process Modal with Charcoal Printer Animation */}
+        <BillingProcessingModal
+          isOpen={isBillingProcessing}
+          storeName={currentStore?.name || "Vyapar Sakha Store"}
+        />
+
+        {/* Loading Overlay for barcode scans / item adds (non-billing) */}
+        {loading && !isBillingProcessing && !isMobile && (
+          <div className="fixed inset-0 bg-black/25 backdrop-blur-xs flex items-center justify-center z-40">
+            <div className="bg-white rounded-xl p-5 shadow-xl flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+              <p className="text-gray-700 font-medium text-sm">Updating...</p>
             </div>
           </div>
         )}
 
         {/* Light loading indicator for mobile scanning */}
-        {loading && isMobile && (
+        {loading && !isBillingProcessing && isMobile && (
           <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
             <span className="text-sm font-medium">Adding...</span>

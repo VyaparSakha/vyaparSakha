@@ -3,6 +3,7 @@ export { BilledProductsList } from "./BilledProductsList";
 export { BillingTotal } from "./BillingTotal";
 export { ManualProductModal } from "./ManualProductModal";
 export { BillPreviewModal } from "./BillPreviewModal";
+export { BillingProcessingModal } from "./BillingProcessingModal";
 export { BillingHeader } from "./BillingHeader";
 export { BillingActions } from "./BillingActions";
 export { BillingSyncIndicator } from "./BillingSyncIndicator";
