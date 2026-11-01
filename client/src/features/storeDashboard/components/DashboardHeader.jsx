@@ -1,3 +1,5 @@
+import { Lottie } from 'lottie-react';
+import createStoreAnimation from '../../../assets/animations/storedashboard/01_Create_Store_Step_By_Step_2000ms.json';
 import MobileStorePanel from './MobileStorePanel';
 
 const DashboardHeader = ({ onCreateStore, filters, updateFilters, refreshStores, stats, isOwner }) => {
@@ -23,12 +25,15 @@ const DashboardHeader = ({ onCreateStore, filters, updateFilters, refreshStores,
             {isOwner && (
               <button
                 onClick={onCreateStore}
-                className="btn-primary-yb hover:scale-100 py-2.5 px-4 md:py-3 md:px-6 shadow-lg shadow-blue-500/10 flex items-center gap-2 group md:flex-none transition-all duration-200"
+                aria-label="Create New Store"
+                className="p-0 bg-transparent border-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 rounded-xl"
               >
-                <svg className="h-3.5 w-3.5 md:h-4 md:w-4 transform group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="font-black uppercase tracking-widest whitespace-nowrap text-[10px] md:text-sm">Create New Store</span>
+                <Lottie
+                  src={createStoreAnimation}
+                  loop
+                  autoplay
+                  style={{ width: 200, height: 75 }}
+                />
               </button>
             )}
 
