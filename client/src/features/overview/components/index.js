@@ -4,3 +4,6 @@ export { SalesPerformanceSection } from "./SalesPerformanceSection";
 export { SalesTrendsSection } from "./SalesTrendsSection";
 export { InventorySummarySection } from "./InventorySummarySection";
 export { SuppliersAndPurchasesSection } from "./SuppliersAndPurchasesSection";
+export { default as AnimatedPurchasesButton } from "./AnimatedPurchasesButton";
+export { default as AnimatedInventoryButton } from "./AnimatedInventoryButton";
+export { default as AnimatedBillingButton } from "./AnimatedBillingButton";

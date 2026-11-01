@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   RotateCw,
   PlusCircle,
-  Package,
-  ShoppingBag,
   Store as StoreIcon,
   Sparkles,
 } from "lucide-react";
+import AnimatedPurchasesButton from "./AnimatedPurchasesButton";
+import AnimatedInventoryButton from "./AnimatedInventoryButton";
+import AnimatedBillingButton from "./AnimatedBillingButton";
 
 /**
  * OverviewHeader - Clean, modular header section for Store Overview
@@ -79,32 +80,20 @@ export const OverviewHeader = ({
             </button>
           )}
 
-          {/* Quick Action: New Purchase / Purchases */}
-          <button
+          {/* Quick Action: Celebratory Animated Purchases Button */}
+          <AnimatedPurchasesButton
             onClick={() => router.push(`/storeDashboard/${storeId}/purchases`)}
-            className="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-orange-50/50 text-orange-700 font-semibold text-xs sm:text-sm border border-orange-200/80 shadow-xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <ShoppingBag className="w-4 h-4 text-orange-600" />
-            <span>Purchases</span>
-          </button>
+          />
 
-          {/* Quick Action: Inventory */}
-          <button
+          {/* Quick Action: Celebratory Animated Inventory Button */}
+          <AnimatedInventoryButton
             onClick={() => router.push(`/storeDashboard/${storeId}/inventory`)}
-            className="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-blue-50/50 text-blue-700 font-semibold text-xs sm:text-sm border border-blue-200/80 shadow-xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <Package className="w-4 h-4 text-blue-600" />
-            <span>Inventory</span>
-          </button>
+          />
 
-          {/* Primary Action Button: New Bill */}
-          <button
+          {/* Primary Action Button: Celebratory Animated Billing / New Bill */}
+          <AnimatedBillingButton
             onClick={() => router.push(`/storeDashboard/${storeId}/billing`)}
-            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <PlusCircle className="w-4 h-4 text-white" />
-            <span>New Bill</span>
-          </button>
+          />
         </div>
       </div>
     </header>
