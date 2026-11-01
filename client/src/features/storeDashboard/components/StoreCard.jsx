@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { Lottie } from 'lottie-react';
 import shopAnimation from '../../../assets/animations/storedashboard/card/01_shop_assembles.json';
 import parcelAnimation from '../../../assets/animations/storedashboard/card/02_parcel_packs.json';
+import doorAnimation from '../../../assets/animations/storedashboard/card/03_door_opens.json';
+import staffAnimation from '../../../assets/animations/storedashboard/card/04_staff_badge.json';
+import deleteAnimation from '../../../assets/animations/storedashboard/card/05_paper_drops.json';
 import { getStoreInitials, getStoreColor } from '../utils/helpers';
 
 /**
@@ -17,6 +20,9 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
   const color = getStoreColor(index);
   const shopRef = useRef(null);
   const parcelRef = useRef(null);
+  const doorRef = useRef(null);
+  const staffRef = useRef(null);
+  const deleteRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -151,12 +157,23 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
       </div>
 
       {/* Footer / Action Section */}
-      <div className="lg:h-full px-5 py-2 lg:py-0 lg:w-36 bg-slate-50/80 lg:bg-transparent border-t lg:border-t-0 lg:border-l border-slate-200/60 flex items-center justify-between lg:flex-col lg:justify-center lg:gap-3">
+      <div className="lg:h-full px-5 py-2 lg:py-0 lg:w-40 bg-slate-50/80 lg:bg-transparent border-t lg:border-t-0 lg:border-l border-slate-200/60 flex items-center justify-between lg:flex-col lg:justify-center lg:gap-2.5">
         {/* Open Button */}
         <button 
-           className="flex items-center justify-center gap-2 text-[10px] lg:text-xs font-black text-white uppercase tracking-widest bg-gradient-to-r from-blue-600 to-indigo-600 lg:w-full px-5 py-2 lg:px-0 lg:py-2.5 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg active:scale-95"
+          onMouseEnter={() => doorRef.current?.play()}
+          onMouseLeave={() => doorRef.current?.stop()}
+          className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black text-white uppercase tracking-widest bg-gradient-to-r from-blue-600 to-indigo-600 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-300 shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95"
         >
-          Open
+          <div className="w-7 h-5 flex items-center justify-center shrink-0">
+            <Lottie
+              lottieRef={doorRef}
+              src={doorAnimation}
+              loop
+              autoplay={false}
+              style={{ width: 28, height: 21 }}
+            />
+          </div>
+          <span>OPEN</span>
         </button>
 
         {/* Staff Management Link — Only for Owners or those with manage permissions */}
@@ -164,9 +181,20 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
           <Link
             href={`/storeDashboard/${store._id}/staff`}
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center justify-center gap-2 text-[10px] lg:text-xs font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 border border-indigo-200 lg:w-full px-5 py-2 lg:px-0 lg:py-2.5 rounded-xl transition-all duration-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 active:scale-95"
+            onMouseEnter={() => staffRef.current?.play()}
+            onMouseLeave={() => staffRef.current?.stop()}
+            className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black uppercase tracking-widest text-indigo-600 bg-blue-50/90 border border-blue-100/90 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-200 hover:bg-blue-100/90 hover:border-blue-200 active:scale-95"
           >
-            🛡️ <span>Staff</span>
+            <div className="w-7 h-5 flex items-center justify-center shrink-0">
+              <Lottie
+                lottieRef={staffRef}
+                src={staffAnimation}
+                loop
+                autoplay={false}
+                style={{ width: 28, height: 21 }}
+              />
+            </div>
+            <span>STAFF</span>
           </Link>
         )}
 
@@ -177,9 +205,20 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
               e.stopPropagation();
               onDelete?.(store);
             }}
-            className="flex items-center justify-center gap-2 text-[10px] lg:text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50 border border-rose-200 lg:w-full px-5 py-2 lg:px-0 lg:py-2.5 rounded-xl transition-all duration-200 hover:bg-rose-600 hover:text-white hover:border-rose-600 active:scale-95"
+            onMouseEnter={() => deleteRef.current?.play()}
+            onMouseLeave={() => deleteRef.current?.stop()}
+            className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50/90 border border-rose-100/90 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-200 hover:bg-rose-100/90 hover:border-rose-200 active:scale-95"
           >
-            🗑️ <span>Delete</span>
+            <div className="w-7 h-5 flex items-center justify-center shrink-0">
+              <Lottie
+                lottieRef={deleteRef}
+                src={deleteAnimation}
+                loop
+                autoplay={false}
+                style={{ width: 28, height: 21 }}
+              />
+            </div>
+            <span>DELETE</span>
           </button>
         )}
       </div>
