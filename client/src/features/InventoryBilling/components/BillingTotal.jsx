@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import { Lottie } from "lottie-react";
+import completeBillAnimation from "@/assets/animations/billing_anim/NexaStore — Add Product · 4.5s.json";
 import { useBillPayment } from "../hooks";
 import { useBillingContext } from "../context/billingContext";
 import { getBuyers } from "@/features/buyer/services/buyerService";
@@ -41,6 +43,12 @@ export const BillingTotal = () => {
   } = useBillPayment();
 
   const [showUpiModal, setShowUpiModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [discountValue, setDiscountValue] = useState(
     discount?.value > 0 ? String(discount.value) : ""
   );
@@ -429,7 +437,7 @@ export const BillingTotal = () => {
           <button
             onClick={handlePayment}
             disabled={billedProducts.length === 0 || isProcessing}
-            className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+            className="w-full relative overflow-visible py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none group"
           >
             {isProcessing ? (
               <>
@@ -438,8 +446,21 @@ export const BillingTotal = () => {
               </>
             ) : (
               <>
+                {/* Lottie animation at left side of button — only shown when at least 1 product is added */}
+                {mounted && billedProducts.length > 0 ? (
+                  <div className="w-10 h-10 -my-3 -ml-2 flex-shrink-0 flex items-center justify-center overflow-visible transition-transform duration-200 group-hover:scale-110">
+                    <Lottie
+                      src={completeBillAnimation}
+                      loop
+                      autoplay
+                      className="w-full h-full object-contain scale-[2.4] pointer-events-none select-none"
+                    />
+                  </div>
+                ) : (
+                  <CheckCircle size={18} className="text-white/80 shrink-0" />
+                )}
                 <span>Complete & Generate Bill</span>
-                <ArrowRight size={16} />
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
               </>
             )}
           </button>
