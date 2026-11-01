@@ -1232,10 +1232,8 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
             {/* Header row: Blue circle sign (AIAvatar) + Title directly above the content */}
             <div className="flex items-center gap-2.5 px-0.5">
               <AIAvatar streaming={isStreaming} state={message.error ? "error" : (isStreaming ? "thinking" : "idle")} size={28} />
-              <span className="text-xs font-bold text-slate-800 tracking-tight">
-                Vyapar Sakha AI
-              </span>
-              {isStreaming ? (
+              
+              {/* {isStreaming ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 border border-indigo-200/60">
                   <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse" />
                   Generating...
@@ -1244,7 +1242,7 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
                 <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
                   Copilot
                 </span>
-              )}
+              )} */}
             </div>
 
             {/* Chat content container: Full width directly below the blue circle sign */}
