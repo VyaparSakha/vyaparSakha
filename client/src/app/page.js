@@ -76,9 +76,9 @@ export default function Home() {
       {/* Main Content */}
       <main className="relative z-10 flex-1">
         {/* Hero Section with Immersive Background Video */}
-        <section className="relative pt-12 md:pt-16 pb-16 md:pb-24 px-4 md:px-6 overflow-hidden">
+        <section className="min-h-screen relative pt-12 md:pt-16 pb-16 md:pb-24 px-4 md:px-6 overflow-hidden">
           {/* Background Video Layer */}
-          <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+          <div className=" absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
             <video
               ref={videoRef}
               autoPlay
@@ -86,7 +86,7 @@ export default function Home() {
               muted={isVideoMuted}
               playsInline
               preload="auto"
-              className="w-full h-full object-cover object-center opacity-70 scale-105 filter blur-[0.5px] transition-opacity duration-1000"
+              className="w-full h-full object-cover object-center opacity-100 scale-105 filter  transition-opacity duration-1000"
             >
               <source
                 src="/videos/homePage/gemini_generated_video_bb9a33e7.mp4"
@@ -95,13 +95,13 @@ export default function Home() {
             </video>
 
             {/* Seamless Light Overlays for Maximum Text Legibility & Brand Blending */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-white" />
+            {/* <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-white" />
             <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-transparent to-white/80" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-white/30 to-white" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-white/30 to-white" /> */}
           </div>
 
           {/* Ambient Sound Control in bottom corner */}
-          <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-20">
+          <div className="min-h-full absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-20">
             <button
               onClick={toggleVideoMute}
               className="px-3 py-1.5 rounded-full bg-white/80 hover:bg-white border border-slate-200/80 text-slate-700 hover:text-slate-900 shadow-sm backdrop-blur-md text-[11px] font-bold inline-flex items-center gap-1.5 transition-all active:scale-95"
@@ -128,13 +128,13 @@ export default function Home() {
                 </span>
               </div>
 
-              <h1 className="mt-6 md:mt-8 text-4xl sm:text-6xl md:text-8xl lg:text-[9rem] font-black tracking-tighter leading-[1] md:leading-[0.95] text-slate-900 drop-shadow-sm animate-fade-in-up [animation-delay:400ms]">
+              <h1 className="mt-6 md:mt-8 text-4xl sm:text-6xl md:text-8xl lg:text-[9rem] font-black tracking-tighter leading-[1] md:leading-[0.95] text-slate-200 drop-shadow-sm animate-fade-in-up [animation-delay:400ms]">
                 OPERATE FAST.
                 <br />
                 <span className="text-gradient-yb italic">SCALE SAFELY.</span>
               </h1>
 
-              <p className="max-w-3xl mx-auto mt-7 md:mt-9 text-base sm:text-lg md:text-xl lg:text-2xl text-slate-700 font-bold leading-relaxed italic px-4 animate-fade-in-up [animation-delay:600ms]">
+              <p className="max-w-3xl mx-auto mt-7 md:mt-9 text-base sm:text-lg md:text-xl lg:text-2xl text-slate-400 font-bold leading-relaxed italic px-4 animate-fade-in-up [animation-delay:600ms]">
                 VyaparSathi brings inventory, billing, and branch intelligence into one reliable command layer for modern retail teams.
               </p>
 
