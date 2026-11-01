@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Lottie } from 'lottie-react';
 import shopAnimation from '../../../assets/animations/storedashboard/card/01_shop_assembles.json';
-import parcel
+import parcelAnimation from '../../../assets/animations/storedashboard/card/02_parcel_packs.json';
 import { getStoreInitials, getStoreColor } from '../utils/helpers';
 
 /**
@@ -15,14 +15,23 @@ import { getStoreInitials, getStoreColor } from '../utils/helpers';
 const StoreCard = ({ store, index, onClick, onDelete }) => {
   const initials = getStoreInitials(store.name);
   const color = getStoreColor(index);
-  const lottieRef = useRef(null);
+  const shopRef = useRef(null);
+  const parcelRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div
       onClick={() => onClick?.(store)}
-      onMouseEnter={() => { setIsHovered(true); lottieRef.current?.play(); }}
-      onMouseLeave={() => { setIsHovered(false); lottieRef.current?.stop(); }}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        shopRef.current?.play();
+        parcelRef.current?.play();
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        shopRef.current?.stop();
+        parcelRef.current?.stop();
+      }}
       className="group relative bg-white border border-slate-200/80 rounded-2xl lg:rounded-[1.5rem] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:border-blue-400/50 transition-all duration-500 cursor-pointer flex flex-col lg:flex-row lg:items-center overflow-hidden h-full lg:h-[180px]"
       style={{ transform: 'translateZ(0)' }}
     >
@@ -102,15 +111,26 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
           </div>
         </div>
 
-        {/* Store Animation — hidden on mobile, visible on desktop between name & stats */}
-        <div className="hidden lg:flex flex-shrink-0 items-center justify-center w-[140px]">
-          <Lottie
-            lottieRef={lottieRef}
-            src={shopAnimation}
-            loop
-            autoplay={false}
-            style={{ width: 130, height: 98 }}
-          />
+        {/* Store Animations (Shop + Parcel) — hidden on mobile, placed one after other with space on desktop */}
+        <div className="hidden lg:flex flex-shrink-0 items-center justify-center gap-3 xl:gap-4 px-2">
+          <div className="flex items-center justify-center">
+            <Lottie
+              lottieRef={shopRef}
+              src={shopAnimation}
+              loop
+              autoplay={false}
+              style={{ width: 110, height: 82 }}
+            />
+          </div>
+          <div className="flex items-center justify-center">
+            <Lottie
+              lottieRef={parcelRef}
+              src={parcelAnimation}
+              loop
+              autoplay={false}
+              style={{ width: 110, height: 82 }}
+            />
+          </div>
         </div>
 
         {/* Stats Section */}
