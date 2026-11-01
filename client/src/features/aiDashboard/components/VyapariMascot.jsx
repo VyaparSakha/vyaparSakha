@@ -34,7 +34,7 @@ export default function VyapariMascot({
   const shouldLoop = loop !== null ? loop : isLoopingState;
 
   if (!mounted) {
-    return <div className={className} />;
+    return <div className={`${className} rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 opacity-60 animate-pulse`} />;
   }
 
   return (

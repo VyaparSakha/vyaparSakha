@@ -23,6 +23,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import VyapariMascot from "./VyapariMascot";
 
 /* =========================================================
    STREAM NORMALIZATION UTILS
@@ -530,155 +531,27 @@ export function ToolResultView({ result }) {
 /* =========================================================
    AI AVATAR
 
-   Small animated brand mark used wherever the assistant
-   needs to show up. Pure CSS/SVG, cheap to mount many
-   times in a long thread, reduced-motion aware.
+   Renders the official Vyapar Sakha AI Mascot (Lottie vector
+   mascot). Dynamically animates into "thinking" when streaming,
+   "error" on failure, and "idle" at rest.
 ========================================================= */
 
-export function AIAvatar({ streaming = false, size = 36 }) {
+export function AIAvatar({ streaming = false, size = 28, state = null }) {
+  const mascotState = state || (streaming ? "thinking" : "idle");
+
   return (
     <div
       aria-hidden="true"
-      className={`ai-avatar ${streaming ? "ai-avatar--active" : ""}`}
+      className="relative flex-shrink-0 inline-flex items-center justify-center rounded-full overflow-hidden shadow-sm"
       style={{ width: size, height: size }}
     >
-      <svg viewBox="0 0 40 40" width={size} height={size} className="ai-avatar__svg">
-        <defs>
-          <linearGradient id="aiAvatarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2563eb" />
-            <stop offset="55%" stopColor="#6366f1" />
-            <stop offset="100%" stopColor="#8b5cf6" />
-          </linearGradient>
-        </defs>
-
-        <circle
-          cx="20"
-          cy="20"
-          r="17"
-          fill="none"
-          stroke="url(#aiAvatarGradient)"
-          strokeWidth="1.3"
-          strokeDasharray="3.5 5"
-          strokeLinecap="round"
-          className="ai-avatar__ring"
-        />
-
-        <circle cx="20" cy="20" r="13" fill="url(#aiAvatarGradient)" />
-
-        <path
-          d="M20 12 L21.5 17.8 L27 19.5 L21.5 21.2 L20 27 L18.5 21.2 L13 19.5 L18.5 17.8 Z"
-          fill="#fff"
-          className="ai-avatar__spark"
-        />
-
-        <circle cx="20" cy="3.4" r="1.5" fill="#fff" className="ai-avatar__orbit" />
-      </svg>
-
-      <style jsx>{`
-        .ai-avatar {
-          position: relative;
-          display: inline-flex;
-          flex-shrink: 0;
-          align-items: center;
-          justify-content: center;
-          border-radius: 9999px;
-        }
-
-        .ai-avatar::before {
-          content: "";
-          position: absolute;
-          inset: -22%;
-          border-radius: 9999px;
-          background: radial-gradient(
-            circle,
-            rgba(99, 102, 241, 0.45),
-            rgba(99, 102, 241, 0) 70%
-          );
-          animation: ai-avatar-pulse 2.8s ease-in-out infinite;
-          z-index: 0;
-        }
-
-        .ai-avatar--active::before {
-          animation-duration: 1.5s;
-        }
-
-        .ai-avatar__svg {
-          position: relative;
-          z-index: 1;
-        }
-
-        .ai-avatar__ring {
-          transform-origin: 20px 20px;
-          animation: ai-avatar-spin 9s linear infinite;
-        }
-
-        .ai-avatar__spark {
-          transform-origin: 20px 20px;
-          animation: ai-avatar-spark 2.4s ease-in-out infinite;
-        }
-
-        .ai-avatar__orbit {
-          transform-origin: 20px 20px;
-          opacity: 0;
-        }
-
-        .ai-avatar--active .ai-avatar__orbit {
-          opacity: 1;
-          animation: ai-avatar-orbit 1.4s linear infinite;
-        }
-
-        @keyframes ai-avatar-pulse {
-          0%,
-          100% {
-            transform: scale(0.85);
-            opacity: 0.5;
-          }
-          50% {
-            transform: scale(1.15);
-            opacity: 0.85;
-          }
-        }
-
-        @keyframes ai-avatar-spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes ai-avatar-spark {
-          0%,
-          100% {
-            transform: scale(0.9) rotate(0deg);
-            opacity: 0.85;
-          }
-          50% {
-            transform: scale(1.08) rotate(10deg);
-            opacity: 1;
-          }
-        }
-
-        @keyframes ai-avatar-orbit {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .ai-avatar::before,
-          .ai-avatar__ring,
-          .ai-avatar__spark,
-          .ai-avatar__orbit {
-            animation: none !important;
-          }
-        }
-      `}</style>
+      <VyapariMascot
+        state={mascotState}
+        className="w-full h-full flex items-center justify-center"
+      />
     </div>
   );
 }
-
 /* =========================================================
    COPY BUTTON
 ========================================================= */
@@ -1358,7 +1231,7 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
           <div className="w-full min-w-0 max-w-full flex flex-col gap-2">
             {/* Header row: Blue circle sign (AIAvatar) + Title directly above the content */}
             <div className="flex items-center gap-2.5 px-0.5">
-              <AIAvatar streaming={isStreaming} size={28} />
+              <AIAvatar streaming={isStreaming} state={message.error ? "error" : (isStreaming ? "thinking" : "idle")} size={28} />
               <span className="text-xs font-bold text-slate-800 tracking-tight">
                 Vyapar Sakha AI
               </span>
