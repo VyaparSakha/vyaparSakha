@@ -20,7 +20,7 @@ export const ManualProductModal = ({ inline = false }) => {
   } = useManualProductAdd();
 
   const renderProductRows = (compact = false) => (
-    <div className={compact ? "divide-y divide-gray-100" : "space-y-2"}>
+    <div className={compact ? "divide-y divide-slate-100" : "space-y-2.5 max-h-[50vh] overflow-y-auto p-1"}>
       {filteredProducts.map((product) => {
         const price = Number(product.price || product.sellingPrice || 0);
         const availableQty = Number(product.quantity || product.qty || 0);
@@ -30,11 +30,11 @@ export const ManualProductModal = ({ inline = false }) => {
             key={product._id}
             className={`flex items-center gap-3 ${
               compact
-                ? "group px-3 py-2.5 transition-colors hover:bg-blue-50/60"
-                : "p-4 border border-gray-200 rounded-lg"
+                ? "group px-3.5 py-2.5 transition-colors hover:bg-blue-50/60"
+                : "p-3.5 border border-slate-200 rounded-xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-all"
             }`}
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 transition-colors group-hover:border-blue-100 group-hover:bg-blue-50">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition-colors group-hover:border-blue-200 group-hover:bg-blue-50">
               {product.image ? (
                 <img
                   src={product.image}
@@ -42,40 +42,50 @@ export const ManualProductModal = ({ inline = false }) => {
                   className="h-full w-full object-contain"
                 />
               ) : (
-                <Package className="text-slate-400 group-hover:text-blue-400" size={22} />
+                <Package className="text-slate-400 group-hover:text-blue-600" size={20} />
               )}
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-800">
+              <p className="truncate text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
                 {product.name}
               </p>
-              <p className="mt-0.5 truncate text-[11px] text-slate-400">
+              <p className="truncate text-[11px] text-slate-400 font-mono mt-0.5">
                 {product.barcode
                   ? `Barcode: ${product.barcode}`
                   : product.sku
-                    ? `SKU: ${product.sku}`
-                    : "No barcode or SKU"}
+                  ? `SKU: ${product.sku}`
+                  : "No barcode or SKU"}
               </p>
-              <p
-                className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                  availableQty > 0
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-red-50 text-red-600"
-                }`}
-              >
-                Stock: {availableQty}
+              <div className="mt-1 flex items-center gap-2">
+                <span
+                  className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                    availableQty > 0
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                      : "bg-red-50 text-red-600 border border-red-200/60"
+                  }`}
+                >
+                  Stock: {availableQty}
+                </span>
+                {product.category && (
+                  <span className="text-[10px] font-medium text-slate-400 truncate">
+                    {product.category}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="text-right shrink-0">
+              <p className="text-sm font-black text-slate-900">
+                ₹{price.toFixed(2)}
               </p>
             </div>
 
-            <p className="shrink-0 text-sm font-bold text-slate-800">
-              ₹{price.toFixed(2)}
-            </p>
             <button
               type="button"
               onClick={() => addProduct(product)}
               disabled={availableQty <= 0}
-              className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+              className="shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
             >
               Add
             </button>
@@ -87,38 +97,56 @@ export const ManualProductModal = ({ inline = false }) => {
 
   if (inline) {
     return (
-      <div className="relative z-20 h-[8.5rem] rounded-lg bg-white shadow-md md:h-[9rem]">
-        <div className="p-4 md:p-6 pb-0">
-          <h2 className="mb-3 text-lg font-semibold text-gray-800 md:text-xl">
-            Search Product
-          </h2>
+      <div className="h-full relative z-20 bg-white/95 backdrop-blur-md rounded-2xl md:rounded-3xl shadow-lg shadow-slate-200/50 border border-slate-200/80 p-5 md:p-6 transition-all flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2.5 tracking-tight">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-xs">
+                <Search size={17} />
+              </div>
+              <span>Quick Product Search</span>
+            </h2>
+            <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100 uppercase tracking-wider">
+              Catalog Lookup
+            </span>
+          </div>
+
           <div className="relative">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={19}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              size={18}
             />
             <input
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search product name, barcode or SKU..."
-              className="w-full rounded-lg border-2 border-blue-500 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+              placeholder="Type name, barcode, or SKU to search..."
+              className="w-full bg-slate-50/80 border border-slate-200 focus:border-blue-600 focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
               aria-label="Search products"
             />
           </div>
         </div>
 
+        <p className="text-[11px] text-slate-400 mt-2.5 font-medium">
+          Instant search across entire inventory catalog
+        </p>
+
         {searchTerm.trim() && (
-          <div className="absolute left-4 right-4 top-full z-30 mt-3 max-h-80 overflow-y-auto overscroll-contain rounded-xl border border-slate-200 border-t-[3px] border-t-blue-500 bg-white shadow-2xl shadow-slate-900/15 ring-1 ring-black/5 md:left-6 md:right-6">
+          <div className="absolute left-3 right-3 top-full z-40 mt-2 max-h-80 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/5 p-1">
+            <div className="px-3.5 py-2 bg-gradient-to-r from-blue-50 to-indigo-50/50 border-b border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+              <span>Search Results</span>
+              <span>{filteredProducts.length} items</span>
+            </div>
             {isSearching ? (
-              <p className="p-6 text-center text-sm text-gray-500">
-                Searching products...
-              </p>
+              <div className="p-6 text-center text-xs text-slate-400 font-medium flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span>Searching catalog...</span>
+              </div>
             ) : filteredProducts.length > 0 ? (
               renderProductRows(true)
             ) : (
-              <p className="p-6 text-center text-sm text-gray-500">
-                No matching products found
+              <p className="p-6 text-center text-xs text-slate-400 font-medium">
+                No products found matching &quot;{searchTerm}&quot;
               </p>
             )}
           </div>
@@ -130,11 +158,19 @@ export const ManualProductModal = ({ inline = false }) => {
   if (!isModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-semibold">Add Product Manually</h2>
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-blue-50/50 to-indigo-50/40">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs">
+              <Package size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">Add Product Manually</h2>
+              <p className="text-xs text-slate-500">Pick from store catalog or add a custom item</p>
+            </div>
+          </div>
           <button
             onClick={() => {
               setIsModalOpen(false);
@@ -142,146 +178,47 @@ export const ManualProductModal = ({ inline = false }) => {
               setSelectedProduct(null);
               setQuantity(1);
             }}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition-colors"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Search */}
-        <div className="p-6 border-b">
+        <div className="p-5 border-b border-slate-100">
           <div className="relative">
             <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={20}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              size={18}
             />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by product name or barcode..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search product name, barcode or SKU..."
+              className="w-full bg-slate-50 border border-slate-200 focus:border-blue-600 focus:bg-white rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
               autoFocus
             />
           </div>
         </div>
 
         {/* Product List */}
-        <div className="p-6 max-h-96 overflow-y-auto">
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
-              <p>No products found</p>
-              <p className="text-sm mt-2">Try a different search term</p>
+        <div className="flex-1 overflow-y-auto p-5">
+          {isSearching ? (
+            <div className="py-12 text-center text-xs text-slate-400 font-medium flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span>Searching catalog...</span>
             </div>
+          ) : filteredProducts.length > 0 ? (
+            renderProductRows(false)
           ) : (
-            <div className="space-y-2">
-              {filteredProducts.map((product) => {
-                const price = product.price || product.sellingPrice || 0;
-                const availableQty = product.quantity || product.qty || 0;
-                const isSelected = selectedProduct?._id === product._id;
-
-                return (
-                  <button
-                    type="button"
-                    key={product._id}
-                    onClick={() => setSelectedProduct(product)}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && setSelectedProduct(product)
-                    }
-                    className={`w-full p-4 border rounded-lg cursor-pointer transition-all text-left ${
-                      isSelected
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {product.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {product.barcode && `Barcode: ${product.barcode}`}
-                          {product.category && ` | ${product.category}`}
-                        </p>
-                        <p className="text-sm text-gray-400 mt-1">
-                          Available: {availableQty} units
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">
-                          ₹{price.toFixed(2)}
-                        </p>
-                        {availableQty === 0 && (
-                          <span className="text-xs text-red-600">
-                            Out of stock
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="py-12 text-center">
+              <Package className="mx-auto text-slate-300 mb-2" size={36} />
+              <p className="text-sm font-semibold text-slate-600">No matching products</p>
+              <p className="text-xs text-slate-400 mt-1">Try another search keyword or barcode</p>
             </div>
           )}
         </div>
-
-        {/* Selected Product & Quantity */}
-        {selectedProduct && (
-          <div className="p-6 border-t bg-gray-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">
-                  {selectedProduct.name}
-                </p>
-                <p className="text-sm text-gray-500">
-                  ₹
-                  {(
-                    selectedProduct.price ||
-                    selectedProduct.sellingPrice ||
-                    0
-                  ).toFixed(2)}{" "}
-                  per unit
-                </p>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div>
-                  <label
-                    htmlFor="quantity-input"
-                    className="block text-sm text-gray-600 mb-1"
-                  >
-                    Quantity
-                  </label>
-                  <input
-                    id="quantity-input"
-                    type="number"
-                    value={quantity}
-                    onChange={(e) =>
-                      setQuantity(
-                        Math.max(1, Number.parseInt(e.target.value, 10) || 1),
-                      )
-                    }
-                    min="1"
-                    max={selectedProduct.quantity || selectedProduct.qty || 0}
-                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-center"
-                  />
-                </div>
-
-                <button
-                  onClick={handleAddProduct}
-                  disabled={
-                    quantity <= 0 ||
-                    quantity >
-                      (selectedProduct.quantity || selectedProduct.qty || 0)
-                  }
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  Add to Bill
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
