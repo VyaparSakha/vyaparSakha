@@ -83,10 +83,10 @@ const PageLoader = ({
               <span className="text-xl font-black tracking-tight text-slate-900">
                 Vyapar<span className="text-amber-500">Sakha</span>
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200/60 uppercase tracking-wider">
+              {/* <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200/60 uppercase tracking-wider">
                 <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
                 AI
-              </span>
+              </span> */}
             </div>
             
             <p className="text-xs sm:text-sm font-medium text-slate-600 tracking-normal px-2">
