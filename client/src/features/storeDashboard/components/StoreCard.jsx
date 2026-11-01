@@ -1,8 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Lottie } from 'lottie-react';
+import shopAnimation from '../../../assets/animations/storedashboard/card/01_shop_assembles.json';
+import parcelAnimation from '../../../assets/animations/storedashboard/card/02_parcel_packs.json';
+import doorAnimation from '../../../assets/animations/storedashboard/card/03_door_opens.json';
+import staffAnimation from '../../../assets/animations/storedashboard/card/04_staff_badge.json';
+import deleteAnimation from '../../../assets/animations/storedashboard/card/05_paper_drops.json';
 import { getStoreInitials, getStoreColor } from '../utils/helpers';
 
 /**
@@ -12,10 +18,78 @@ import { getStoreInitials, getStoreColor } from '../utils/helpers';
 const StoreCard = ({ store, index, onClick, onDelete }) => {
   const initials = getStoreInitials(store.name);
   const color = getStoreColor(index);
+  const shopRef = useRef(null);
+  const parcelRef = useRef(null);
+  const doorRef = useRef(null);
+  const staffRef = useRef(null);
+  const deleteRef = useRef(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const setToCompleted = useCallback((ref, frame = 135) => {
+    try {
+      ref.current?.pause();
+      if (ref.current?.seek) {
+        ref.current.seek({ frame });
+      }
+      if (ref.current?.animationItem?.goToAndStop) {
+        ref.current.animationItem.goToAndStop(frame, true);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const playFromStart = useCallback((ref) => {
+    try {
+      if (ref.current?.seek) {
+        ref.current.seek({ frame: 0 });
+      }
+      if (ref.current?.animationItem?.goToAndPlay) {
+        ref.current.animationItem.goToAndPlay(0, true);
+      } else {
+        ref.current?.play?.();
+      }
+    } catch (e) {
+      ref.current?.play?.();
+    }
+  }, []);
+
+  useEffect(() => {
+    setToCompleted(shopRef, 135);
+    setToCompleted(parcelRef, 135);
+    setToCompleted(staffRef, 135);
+
+    const timer1 = setTimeout(() => {
+      setToCompleted(shopRef, 135);
+      setToCompleted(parcelRef, 135);
+      setToCompleted(staffRef, 135);
+    }, 60);
+
+    const timer2 = setTimeout(() => {
+      setToCompleted(shopRef, 135);
+      setToCompleted(parcelRef, 135);
+      setToCompleted(staffRef, 135);
+    }, 200);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [setToCompleted]);
 
   return (
     <div
       onClick={() => onClick?.(store)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        playFromStart(shopRef);
+        playFromStart(parcelRef);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setToCompleted(shopRef);
+        setToCompleted(parcelRef);
+      }}
       className="group relative bg-white border border-slate-200/80 rounded-2xl lg:rounded-[1.5rem] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] hover:border-blue-400/50 transition-all duration-500 cursor-pointer flex flex-col lg:flex-row lg:items-center overflow-hidden h-full lg:h-[180px]"
       style={{ transform: 'translateZ(0)' }}
     >
@@ -95,6 +169,34 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
           </div>
         </div>
 
+        {/* Store Animations (Shop + Parcel) — hidden on mobile, placed one after other with space on desktop */}
+        <div className="hidden lg:flex flex-shrink-0 items-center justify-center gap-3 xl:gap-4 px-2">
+          <div className="flex items-center justify-center">
+            <Lottie
+              lottieRef={shopRef}
+              src={shopAnimation}
+              loop
+              autoplay={false}
+              subscriptions={{
+                ready: () => setToCompleted(shopRef)
+              }}
+              style={{ width: 110, height: 82 }}
+            />
+          </div>
+          <div className="flex items-center justify-center">
+            <Lottie
+              lottieRef={parcelRef}
+              src={parcelAnimation}
+              loop
+              autoplay={false}
+              subscriptions={{
+                ready: () => setToCompleted(parcelRef)
+              }}
+              style={{ width: 110, height: 82 }}
+            />
+          </div>
+        </div>
+
         {/* Stats Section */}
         <div className={`flex flex-col lg:justify-center flex-1 lg:items-center gap-2 lg:gap-8 lg:px-8 lg:border-x lg:border-slate-100 ${store.isEmployee ? '' : 'grid grid-cols-2 lg:grid-cols-1'}`}>
           <div className="flex flex-col lg:items-center gap-1">
@@ -113,12 +215,25 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
       </div>
 
       {/* Footer / Action Section */}
-      <div className="lg:h-full px-5 py-2 lg:py-0 lg:w-36 bg-slate-50/80 lg:bg-transparent border-t lg:border-t-0 lg:border-l border-slate-200/60 flex items-center justify-between lg:flex-col lg:justify-center lg:gap-3">
+      <div className="lg:h-full px-5 py-2 lg:py-0 lg:w-40 bg-slate-50/80 lg:bg-transparent border-t lg:border-t-0 lg:border-l border-slate-200/60 flex items-center justify-between lg:flex-col lg:justify-center lg:gap-2.5">
         {/* Open Button */}
         <button 
-           className="flex items-center justify-center gap-2 text-[10px] lg:text-xs font-black text-white uppercase tracking-widest bg-gradient-to-r from-blue-600 to-indigo-600 lg:w-full px-5 py-2 lg:px-0 lg:py-2.5 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg active:scale-95"
+          onMouseEnter={() => doorRef.current?.play()}
+          onMouseLeave={() => doorRef.current?.stop()}
+          className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black text-white uppercase tracking-widest bg-gradient-to-r from-blue-600 to-indigo-600 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-300 shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95 group/btn"
         >
-          Open
+          <div className="w-7 h-7 flex items-center justify-center shrink-0 overflow-hidden relative">
+            <div className="absolute w-[210px] h-[158px] flex items-center justify-center pointer-events-none">
+              <Lottie
+                lottieRef={doorRef}
+                src={doorAnimation}
+                loop
+                autoplay={false}
+                style={{ width: 210, height: 158 }}
+              />
+            </div>
+          </div>
+          <span>OPEN</span>
         </button>
 
         {/* Staff Management Link — Only for Owners or those with manage permissions */}
@@ -126,9 +241,25 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
           <Link
             href={`/storeDashboard/${store._id}/staff`}
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center justify-center gap-2 text-[10px] lg:text-xs font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 border border-indigo-200 lg:w-full px-5 py-2 lg:px-0 lg:py-2.5 rounded-xl transition-all duration-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 active:scale-95"
+            onMouseEnter={() => playFromStart(staffRef)}
+            onMouseLeave={() => setToCompleted(staffRef)}
+            className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black uppercase tracking-widest text-indigo-600 bg-blue-50/90 border border-blue-100/90 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-200 hover:bg-blue-100/90 hover:border-blue-200 active:scale-95 group/btn"
           >
-            🛡️ <span>Staff</span>
+            <div className="w-7 h-7 flex items-center justify-center shrink-0 overflow-hidden relative">
+              <div className="absolute w-[210px] h-[158px] flex items-center justify-center pointer-events-none">
+                <Lottie
+                  lottieRef={staffRef}
+                  src={staffAnimation}
+                  loop
+                  autoplay={false}
+                  subscriptions={{
+                    ready: () => setToCompleted(staffRef)
+                  }}
+                  style={{ width: 210, height: 158 }}
+                />
+              </div>
+            </div>
+            <span>STAFF</span>
           </Link>
         )}
 
@@ -139,9 +270,22 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
               e.stopPropagation();
               onDelete?.(store);
             }}
-            className="flex items-center justify-center gap-2 text-[10px] lg:text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50 border border-rose-200 lg:w-full px-5 py-2 lg:px-0 lg:py-2.5 rounded-xl transition-all duration-200 hover:bg-rose-600 hover:text-white hover:border-rose-600 active:scale-95"
+            onMouseEnter={() => deleteRef.current?.play()}
+            onMouseLeave={() => deleteRef.current?.stop()}
+            className="flex items-center justify-center gap-1.5 text-[10px] lg:text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50/90 border border-rose-100/90 lg:w-full px-4 py-2 lg:px-0 lg:py-2.5 rounded-2xl transition-all duration-200 hover:bg-rose-100/90 hover:border-rose-200 active:scale-95 group/btn"
           >
-            🗑️ <span>Delete</span>
+            <div className="w-7 h-7 flex items-center justify-center shrink-0 overflow-hidden relative">
+              <div className="absolute w-[210px] h-[158px] flex items-center justify-center pointer-events-none translate-x-1">
+                <Lottie
+                  lottieRef={deleteRef}
+                  src={deleteAnimation}
+                  loop
+                  autoplay={false}
+                  style={{ width: 210, height: 158 }}
+                />
+              </div>
+            </div>
+            <span>DELETE</span>
           </button>
         )}
       </div>
