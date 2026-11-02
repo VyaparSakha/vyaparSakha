@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { buildVisualsFromToolCalls, buildVisualsFromMessageText } from "@/lib/visuals/fromToolCalls";
 
 // Lazy-load VisualRenderer to keep initial bundle small
 const VisualRenderer = dynamic(
@@ -1203,6 +1204,17 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
       [message.meta?.tool_calls],
     );
 
+    const displayVisuals = useMemo(() => {
+      if (Array.isArray(message.visuals) && message.visuals.length > 0) {
+        return message.visuals;
+      }
+      const fromTools = buildVisualsFromToolCalls(toolCalls);
+      if (fromTools.length > 0) {
+        return fromTools;
+      }
+      return buildVisualsFromMessageText(content || message.text);
+    }, [message.visuals, toolCalls, content, message.text]);
+
     const handleFeedback = (type) => {
       setFeedback(type);
 
@@ -1320,9 +1332,9 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
               ) : null}
 
               {/* AI VISUAL SPECS (charts / tables / KPI cards) */}
-              {Array.isArray(message.visuals) && message.visuals.length > 0 && (
+              {Array.isArray(displayVisuals) && displayVisuals.length > 0 && (
                 <div className="mt-3 flex flex-col gap-3">
-                  {message.visuals.map((spec, i) => (
+                  {displayVisuals.map((spec, i) => (
                     <VisualRenderer key={i} spec={spec} />
                   ))}
                 </div>
