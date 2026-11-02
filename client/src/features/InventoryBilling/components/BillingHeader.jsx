@@ -63,7 +63,7 @@ export const BillingHeader = ({ storeId, storeName, currentStore, isMobile }) =>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base sm:text-lg md:text-xl font-black text-slate-900 tracking-tight truncate max-w-[200px] xs:max-w-xs sm:max-w-none">
+              <h1 className="text-base sm:text-lg md:text-xl font-black text-slate-900 tracking-tight">
                 {name}
               </h1>
               <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 tracking-wide shrink-0">
@@ -73,25 +73,25 @@ export const BillingHeader = ({ storeId, storeName, currentStore, isMobile }) =>
             </div>
 
             {/* Store Details: Address, Contact */}
-            <div className="flex flex-col xs:flex-row xs:flex-wrap items-start xs:items-center gap-x-3 gap-y-0.5 text-xs text-slate-500 font-medium mt-1">
+            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-slate-500 font-medium mt-1">
               {storeAddressStr && (
-                <span className="flex items-center gap-1.5 min-w-0 max-w-full">
-                  <MapPin size={13} className="text-indigo-400 shrink-0" />
-                  <span className="truncate">{storeAddressStr}</span>
+                <span className="inline-flex items-start sm:items-center gap-1.5 min-w-0 max-w-full text-slate-600">
+                  <MapPin size={13} className="text-indigo-500 shrink-0 mt-0.5 sm:mt-0" />
+                  <span className="break-words leading-tight">{storeAddressStr}</span>
                 </span>
               )}
 
               {storePhone && (
-                <span className="flex items-center gap-1.5 shrink-0">
-                  <Phone size={13} className="text-indigo-400 shrink-0" />
+                <span className="inline-flex items-center gap-1.5 shrink-0 text-slate-600">
+                  <Phone size={13} className="text-indigo-500 shrink-0" />
                   <span>{storePhone}</span>
                 </span>
               )}
 
               {storeEmail && (
-                <span className="flex items-center gap-1.5 min-w-0 max-w-full">
-                  <Mail size={13} className="text-indigo-400 shrink-0" />
-                  <span className="truncate">{storeEmail}</span>
+                <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full text-slate-600">
+                  <Mail size={13} className="text-indigo-500 shrink-0" />
+                  <span className="break-all">{storeEmail}</span>
                 </span>
               )}
             </div>
