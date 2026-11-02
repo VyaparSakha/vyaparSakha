@@ -9,6 +9,7 @@ import VyapariMascot from "../VyapariMascot";
 import AttachmentModal from "../AttachmentModal";
 import ClarificationBanner from "../ClarificationBanner";
 import CartoonVoiceBotView from "../CartoonVoiceBotView";
+import { buildVisualsFromToolCalls } from "@/lib/visuals/fromToolCalls";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
 import CopilotHeader from "../copilot/CopilotHeader";
@@ -304,6 +305,21 @@ const AskCopilotSection = ({
     tool_create_expense: "expenses", tool_update_expense: "expenses", tool_delete_expense: "expenses",
   };
 
+  const handleVoiceVisual = useCallback((visualSpec) => {
+    if (!visualSpec) return;
+    const specList = Array.isArray(visualSpec) ? visualSpec : [visualSpec];
+    setMessages((prev) => {
+      const targetId = liveAiMsgIdRef.current;
+      return prev.map((m) => {
+        if (m.id === targetId || (!targetId && m.role === "assistant")) {
+          const prevVisuals = Array.isArray(m.visuals) ? m.visuals : [];
+          return { ...m, visuals: [...prevVisuals, ...specList] };
+        }
+        return m;
+      });
+    });
+  }, []);
+
   const handleVoiceToolComplete = useCallback((data) => {
     setVoiceToolStatus({
       active: true,
@@ -317,6 +333,64 @@ const AskCopilotSection = ({
     voiceToolTimerRef.current = setTimeout(() => {
       setVoiceToolStatus(null);
     }, 5000);
+
+    // Extract or build visual spec for analytical tools
+    let specs = [];
+    if (data.visual) {
+      specs = Array.isArray(data.visual) ? data.visual : [data.visual];
+    } else if (data.tool && data.result) {
+      specs = buildVisualsFromToolCalls([{ name: data.tool, result: data.result, args: data.args }]);
+    }
+
+    const toolCallObj = {
+      id: `vtc-${Date.now()}`,
+      name: data.tool,
+      args: data.args || {},
+      result: data.result,
+    };
+
+    // Attach visuals and tool call metadata to current voice assistant message
+    setMessages((prev) => {
+      const targetId = liveAiMsgIdRef.current;
+      let matched = false;
+      const updated = prev.map((m) => {
+        if (m.id === targetId || (!targetId && m.role === "assistant")) {
+          matched = true;
+          const prevVisuals = Array.isArray(m.visuals) ? m.visuals : [];
+          const prevCalls = Array.isArray(m.meta?.tool_calls) ? m.meta.tool_calls : [];
+          return {
+            ...m,
+            visuals: specs.length > 0 ? [...prevVisuals, ...specs] : prevVisuals,
+            meta: {
+              ...(m.meta || {}),
+              tool_calls: [...prevCalls, toolCallObj],
+            },
+          };
+        }
+        return m;
+      });
+
+      if (!matched) {
+        const newAiId = `assistant-voice-${Date.now()}`;
+        liveAiMsgIdRef.current = newAiId;
+        return [
+          ...prev,
+          {
+            id: newAiId,
+            role: "assistant",
+            text: "",
+            timestamp: Date.now(),
+            streaming: true,
+            visuals: specs,
+            meta: {
+              tool_calls: [toolCallObj],
+            },
+            error: "",
+          },
+        ];
+      }
+      return updated;
+    });
 
     // Emit refresh if the voice tool mutated backend data
     const section = VOICE_MUTATION_SECTIONS[data.tool];
@@ -368,6 +442,7 @@ const AskCopilotSection = ({
     onTurnComplete: handleVoiceTurnComplete,
     onToolStart: handleVoiceToolStart,
     onToolComplete: handleVoiceToolComplete,
+    onVisual: handleVoiceVisual,
   });
 
   // Auto-start microphone streaming to Gemini once WebSocket is ready in Live Call mode

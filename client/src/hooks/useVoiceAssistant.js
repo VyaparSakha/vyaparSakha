@@ -287,6 +287,8 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
                         optionsRef.current?.onToolStart?.(msg);
                     } else if (msg.type === 'tool_complete') {
                         optionsRef.current?.onToolComplete?.(msg);
+                    } else if (msg.type === 'visual') {
+                        optionsRef.current?.onVisual?.(msg.spec || msg.visual);
                     }
                 } catch (_) {}
             }

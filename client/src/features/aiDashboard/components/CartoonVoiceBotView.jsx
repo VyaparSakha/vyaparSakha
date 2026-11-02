@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import WaveRibbonAnimation from "./WaveRibbonAnimation";
+import dynamic from "next/dynamic";
+import { buildVisualsFromToolCalls } from "@/lib/visuals/fromToolCalls";
+
+const VisualRenderer = dynamic(
+  () => import("@/features/visuals/components/VisualRenderer"),
+  { ssr: false }
+);
 import {
   Mic,
   MicOff,
@@ -377,17 +384,40 @@ export default function CartoonVoiceBotView({
             }
 
             // Assistant turn
+            const displayVisuals =
+              Array.isArray(msg.visuals) && msg.visuals.length > 0
+                ? msg.visuals
+                : Array.isArray(msg.meta?.tool_calls) && msg.meta.tool_calls.length > 0
+                ? buildVisualsFromToolCalls(msg.meta.tool_calls)
+                : [];
+
             return (
               <div
                 key={msg.id || idx}
-                className="flex flex-col items-start max-w-[85%] space-y-1.5 animate-fadeIn"
+                className="flex flex-col items-start w-full max-w-[92%] sm:max-w-[85%] space-y-2 animate-fadeIn"
               >
-                <div className="text-[15px] text-slate-800 leading-relaxed font-normal whitespace-pre-wrap break-words">
-                  {msg.text}
-                  {msg.streaming && (
-                    <span className="inline-block h-2 w-2 ml-1 rounded-full bg-blue-600 animate-pulse" />
-                  )}
-                </div>
+                {msg.text && (
+                  <div className="text-[15px] text-slate-800 leading-relaxed font-normal whitespace-pre-wrap break-words bg-slate-50/70 border border-slate-100 rounded-2xl px-3.5 py-2">
+                    {msg.text}
+                    {msg.streaming && (
+                      <span className="inline-block h-2 w-2 ml-1 rounded-full bg-blue-600 animate-pulse" />
+                    )}
+                  </div>
+                )}
+
+                {/* Render charts, graphs, tables, and KPI cards in voice mode */}
+                {displayVisuals.length > 0 && (
+                  <div className="w-full space-y-2.5 my-1">
+                    {displayVisuals.map((spec, vIdx) => (
+                      <div
+                        key={vIdx}
+                        className="w-full overflow-hidden rounded-xl bg-white border border-slate-200/90 shadow-sm p-1"
+                      >
+                        <VisualRenderer spec={spec} />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Action buttons (Copy, Speaker, Thumbs Up/Down) */}
                 <div className="flex items-center gap-1 text-slate-400 pt-0.5">
