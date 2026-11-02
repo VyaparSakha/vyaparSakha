@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Lottie } from "lottie-react";
 import completeBillAnimation from "@/assets/animations/billing_anim/NexaStore — Add Product · 4.5s.json";
+import applyDiscountAnimation from "@/assets/animations/billing_anim/Apply — Star to Success · 3.5s.json";
 import { cashAnimation, upiAnimation, cardAnimation } from "@/assets/Payment Method";
 import { useBillPayment } from "../hooks";
 import { useBillingContext } from "../context/billingContext";
@@ -54,6 +55,15 @@ export const BillingTotal = () => {
     discount?.value > 0 ? String(discount.value) : ""
   );
   const [localDiscountType, setLocalDiscountType] = useState(discount?.type || "fixed");
+  const [showDiscountAnim, setShowDiscountAnim] = useState(false);
+  const [animKey, setAnimKey] = useState(0);
+  const animTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (animTimeoutRef.current) clearTimeout(animTimeoutRef.current);
+    };
+  }, []);
 
   // Keep local input fields in sync if discount in context is reset (e.g. after bill complete or clearBill)
   useEffect(() => {
@@ -140,6 +150,14 @@ export const BillingTotal = () => {
         setDiscount({ type: "fixed", value: clampedAmount });
         setDiscountValue(String(clampedAmount));
       }
+
+      // Show star-to-success animation one time (~3.5 seconds)
+      setShowDiscountAnim(true);
+      setAnimKey((k) => k + 1);
+      if (animTimeoutRef.current) clearTimeout(animTimeoutRef.current);
+      animTimeoutRef.current = setTimeout(() => {
+        // Animation finished, remains at final success state
+      }, 3500);
     } else {
       setDiscount({ type: "fixed", value: 0 });
       setDiscountValue("");
@@ -149,6 +167,8 @@ export const BillingTotal = () => {
   const handleClearDiscount = () => {
     setDiscount({ type: "fixed", value: 0 });
     setDiscountValue("");
+    setShowDiscountAnim(false);
+    setAnimKey((k) => k + 1);
   };
 
   const handleSelectPaymentMethod = (method) => {
@@ -324,62 +344,106 @@ export const BillingTotal = () => {
         </div>
 
         {/* Discount Section */}
-        <div className="space-y-2">
-          <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <Tag size={13} className="text-indigo-600" />
-            <span>Apply Discount</span>
-          </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input
-                type="number"
-                min="0"
-                max={localDiscountType === "percent" ? "100" : undefined}
-                value={discountValue}
-                onChange={(e) => setDiscountValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleApplyDiscount();
-                  }
-                }}
-                placeholder="0.00"
-                className="w-full pl-3 pr-16 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
-              />
-              <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center bg-white rounded-lg border border-slate-200 p-0.5">
+        {(() => {
+          const numDiscountVal = parseFloat(discountValue);
+          const isDiscountDisabled = !discountValue || isNaN(numDiscountVal) || numDiscountVal <= 0;
+          const isDiscountApplied =
+            !isDiscountDisabled &&
+            discount &&
+            discount.value > 0 &&
+            String(discount.value) === String(numDiscountVal) &&
+            discount.type === localDiscountType;
+
+          return (
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Tag size={13} className="text-indigo-600" />
+                <span>Apply Discount</span>
+              </label>
+              <div className="flex items-center gap-1.5">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max={localDiscountType === "percent" ? "100" : undefined}
+                    value={discountValue}
+                    onChange={(e) => {
+                      setDiscountValue(e.target.value);
+                      if (showDiscountAnim) {
+                        setShowDiscountAnim(false);
+                        setAnimKey((k) => k + 1);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (!isDiscountDisabled) {
+                          handleApplyDiscount();
+                        }
+                      }
+                    }}
+                    placeholder="0.00"
+                    className="w-full pl-3 pr-16 h-[38px] bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  />
+                  <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center bg-white rounded-lg border border-slate-200 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setLocalDiscountType("percent")}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-colors ${
+                        localDiscountType === "percent"
+                          ? "bg-indigo-600 text-white"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      %
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLocalDiscountType("fixed")}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-colors ${
+                        localDiscountType === "fixed"
+                          ? "bg-indigo-600 text-white"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      ₹
+                    </button>
+                  </div>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setLocalDiscountType("percent")}
-                  className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-colors ${
-                    localDiscountType === "percent"
-                      ? "bg-indigo-600 text-white"
-                      : "text-slate-600 hover:text-slate-900"
+                  disabled={isDiscountDisabled}
+                  onClick={handleApplyDiscount}
+                  className={`relative shrink-0 flex items-center justify-center transition-all bg-transparent border-0 p-0 overflow-visible outline-none focus:outline-none ${
+                    isDiscountDisabled
+                      ? "opacity-35 cursor-not-allowed"
+                      : "cursor-pointer hover:scale-105 active:scale-95"
                   }`}
+                  style={{
+                    width: "128px",
+                    height: "92px",
+                    marginTop: "-27px",
+                    marginBottom: "-27px",
+                    marginLeft: "-26px",
+                    marginRight: "-22px",
+                  }}
+                  title={isDiscountDisabled ? "Enter a discount to apply" : "Apply Discount"}
+                  aria-label="Apply Discount"
                 >
-                  %
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLocalDiscountType("fixed")}
-                  className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-colors ${
-                    localDiscountType === "fixed"
-                      ? "bg-indigo-600 text-white"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  ₹
+                  {mounted && (
+                    <Lottie
+                      key={animKey}
+                      src={applyDiscountAnimation}
+                      loop={false}
+                      autoplay={showDiscountAnim}
+                      className="w-full h-full object-contain pointer-events-none select-none"
+                    />
+                  )}
                 </button>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleApplyDiscount}
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all active:scale-95 shrink-0"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Payment Method Selector Tiles */}
         <div className="space-y-2">
