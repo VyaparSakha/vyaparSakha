@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Lottie } from "lottie-react";
 import completeBillAnimation from "@/assets/animations/billing_anim/NexaStore — Add Product · 4.5s.json";
+import { cashAnimation, upiAnimation, cardAnimation } from "@/assets/Payment Method";
 import { useBillPayment } from "../hooks";
 import { useBillingContext } from "../context/billingContext";
 import { getBuyers } from "@/features/buyer/services/buyerService";
@@ -387,9 +388,9 @@ export const BillingTotal = () => {
           </label>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { id: "cash", label: "Cash", icon: Banknote },
-              { id: "upi", label: "UPI QR", icon: QrCode },
-              { id: "card", label: "Card", icon: CreditCard },
+              { id: "cash", label: "Cash", animation: cashAnimation, icon: Banknote },
+              { id: "upi", label: "UPI QR", animation: upiAnimation, icon: QrCode },
+              { id: "card", label: "Card", animation: cardAnimation, icon: CreditCard },
             ].map((method) => {
               const Icon = method.icon;
               const isSelected = paymentMethod === method.id;
@@ -398,14 +399,25 @@ export const BillingTotal = () => {
                   key={method.id}
                   type="button"
                   onClick={() => handleSelectPaymentMethod(method.id)}
-                  className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+                  className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all group overflow-visible ${
                     isSelected
-                      ? "bg-indigo-50 border-indigo-600 text-indigo-700 shadow-xs"
-                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      ? "bg-indigo-50/80 border-indigo-600 text-indigo-700 shadow-xs ring-2 ring-indigo-500/20"
+                      : "bg-slate-50/80 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
-                  <Icon size={18} className={isSelected ? "text-indigo-600" : "text-slate-500"} />
-                  <span className="text-xs font-bold">{method.label}</span>
+                  <div className="w-10 h-10 flex items-center justify-center overflow-visible transition-transform duration-200 group-hover:scale-110">
+                    {mounted ? (
+                      <Lottie
+                        src={method.animation}
+                        loop
+                        autoplay
+                        className="w-full h-full object-contain pointer-events-none select-none scale-125"
+                      />
+                    ) : (
+                      <Icon size={20} className={isSelected ? "text-indigo-600" : "text-slate-500"} />
+                    )}
+                  </div>
+                  <span className="text-xs font-bold tracking-tight">{method.label}</span>
                 </button>
               );
             })}
