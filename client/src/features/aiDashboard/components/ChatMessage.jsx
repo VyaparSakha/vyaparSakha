@@ -1,6 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
+
+// Lazy-load VisualRenderer to keep initial bundle small
+const VisualRenderer = dynamic(
+  () => import("@/features/visuals/components/VisualRenderer"),
+  { ssr: false }
+);
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -1311,6 +1318,15 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
                   <span>Vyapar AI is analyzing and generating response...</span>
                 </div>
               ) : null}
+
+              {/* AI VISUAL SPECS (charts / tables / KPI cards) */}
+              {Array.isArray(message.visuals) && message.visuals.length > 0 && (
+                <div className="mt-3 flex flex-col gap-3">
+                  {message.visuals.map((spec, i) => (
+                    <VisualRenderer key={i} spec={spec} />
+                  ))}
+                </div>
+              )}
 
               {/* ERROR */}
               {message.error && (

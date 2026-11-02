@@ -15,6 +15,7 @@
     "@pusher/push-notifications-web": "^1.1.0",
     "@tanstack/react-query": "^5.105.0",
     "@tanstack/react-query-devtools": "^5.105.0",
+    "@tanstack/react-table": "^8.20.6",
     "axios": "^1.13.5",
     "chart.js": "^4.5.1",
     "date-fns": "^4.4.0",
@@ -36,7 +37,8 @@
     "rehype": "^13.0.2",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

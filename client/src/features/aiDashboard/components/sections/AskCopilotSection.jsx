@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { streamCopilotResponse, fetchChatMessages, streamClarifyResponse } from "../../services/aiDashboardService";
@@ -848,6 +848,7 @@ const AskCopilotSection = ({
           streaming: true,
           meta: null,
           error: "",
+          visuals: [],
           timestamp: Date.now() + 1,
         },
       ]);
@@ -869,6 +870,21 @@ const AskCopilotSection = ({
               const chunk = payload?.text || "";
               accumulatedTextRef.current += chunk;
               appendAssistantText(assistantId, chunk);
+              return;
+            }
+
+            if (event === "visual") {
+              // Backend emitted a fully-validated VisualSpec (chart/table/KPI))
+              // Accumulate into this assistant message's visuals array.
+              if (payload && typeof payload === "object") {
+                setMessages((prev) =>
+                  prev.map((entry) =>
+                    entry.id === assistantId
+                      ? { ...entry, visuals: [...(entry.visuals || []), payload] }
+                      : entry
+                  )
+                );
+              }
               return;
             }
 
@@ -993,6 +1009,7 @@ const AskCopilotSection = ({
           streaming: true,
           meta: null,
           error: "",
+          visuals: [],
           timestamp: Date.now() + 1,
         },
       ]);
