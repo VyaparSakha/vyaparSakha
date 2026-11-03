@@ -46,8 +46,9 @@ const InviteEmployeeModal = ({ isOpen, onClose }) => {
       setLoading(true);
       setError('');
       const res = await inviteEmployee({ email, roleId });
-      if (res?.data?.inviteToken) {
-        setInviteToken(res.data.inviteToken);
+      const token = res?.data?.inviteToken || res?.data?.rawToken || res?.inviteToken || res?.rawToken || res?.data?.testRawToken || res?.data?.data?.inviteToken || res?.data?.data?.rawToken;
+      if (token) {
+        setInviteToken(token);
       }
       setSuccess(true);
     } catch (err) {

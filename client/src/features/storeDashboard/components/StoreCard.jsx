@@ -137,7 +137,12 @@ const StoreCard = ({ store, index, onClick, onDelete }) => {
                 <div className="px-2.5 py-0.5 rounded-lg bg-blue-50 border border-blue-100 shadow-sm">
                   <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">{store.businessType || 'Retail'}</span>
                 </div>
-                {store.isEmployee && (
+                {!store.isEmployee ? (
+                  <div className="px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-100 shadow-sm flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+                    <span className="text-[9px] font-black text-indigo-700 uppercase tracking-widest">Store Owner</span>
+                  </div>
+                ) : (
                   <div className="px-3 py-1 rounded-lg bg-amber-50 border border-amber-100 shadow-sm flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                     <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest whitespace-nowrap">

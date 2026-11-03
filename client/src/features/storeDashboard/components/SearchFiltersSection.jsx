@@ -1,4 +1,8 @@
-const SearchFiltersSection = ({ filters, updateFilters, refreshStores }) => {
+import React from 'react';
+
+const SearchFiltersSection = ({ filters, updateFilters, refreshStores, stores = [] }) => {
+  const hasEmployeeStores = stores?.some(s => s.isEmployee);
+
   return (
     <section className="py-1.5 px-4 md:px-6">
       <div className="max-w-7xl mx-auto transition-all duration-300 animate-fade-in-up [animation-delay:400ms]">
@@ -21,6 +25,18 @@ const SearchFiltersSection = ({ filters, updateFilters, refreshStores }) => {
 
             {/* Desktop Filters */}
             <div className="hidden md:flex items-center gap-2">
+              {hasEmployeeStores && (
+                <select
+                  value={filters.workspaceType || 'all'}
+                  onChange={(e) => updateFilters({ workspaceType: e.target.value })}
+                  className="px-3 py-2.5 text-sm bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none font-bold text-slate-700 appearance-none cursor-pointer"
+                >
+                  <option value="all">All Workspaces</option>
+                  <option value="owned">Stores I Own</option>
+                  <option value="employee">Stores Where I Work</option>
+                </select>
+              )}
+
               <select
                 value={filters.businessType}
                 onChange={(e) => updateFilters({ businessType: e.target.value })}

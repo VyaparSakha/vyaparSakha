@@ -24,6 +24,15 @@ export const filterStores = (stores, filters) => {
     filtered = filtered.filter(store => store.businessType === filters.businessType);
   }
 
+  // Filter by workspace role / ownership
+  if (filters.workspaceType && filters.workspaceType !== 'all') {
+    if (filters.workspaceType === 'owned') {
+      filtered = filtered.filter(store => !store.isEmployee);
+    } else if (filters.workspaceType === 'employee') {
+      filtered = filtered.filter(store => store.isEmployee);
+    }
+  }
+
   return filtered;
 };
 

@@ -36,10 +36,22 @@ export default function InvitePage() {
 
   useEffect(() => {
     const fetchInvite = async () => {
+      if (!token) return;
       try {
         setLoading(true);
-        // Call backend validation API (supports /api/invitations/:token or /api/invite/:token)
-        const response = await apiGet(`/invitations/${token}`);
+        const cleanToken = encodeURIComponent(String(token).trim());
+        // Call backend validation API with fallback to /invite/:token
+        let response;
+        try {
+          response = await apiGet(`/invitations/${cleanToken}`);
+        } catch (initialErr) {
+          if (initialErr?.statusCode === 404 || initialErr?.response?.status === 404) {
+            response = await apiGet(`/invite/${cleanToken}`);
+          } else {
+            throw initialErr;
+          }
+        }
+
         if (response?.data?.valid) {
           setInviteData(response.data);
           setInviteStatus('pending');
@@ -49,18 +61,22 @@ export default function InvitePage() {
           setStatusMessage(response?.message || 'Invalid or expired invite link.');
         }
       } catch (err) {
+        console.error('[INVITE PAGE ERROR]', err);
         const errorData = err?.data;
         const status = errorData?.status || 'invalid';
         setInviteStatus(status);
-        setStatusMessage(err?.message || 'Failed to verify invite link.');
+        const rawMessage = (typeof err === 'string' ? err : err?.message || err?.error) || '';
+        if (rawMessage === 'Network Error' || rawMessage.includes('ECONNREFUSED') || rawMessage.includes('Failed to fetch')) {
+          setStatusMessage('Could not connect to the backend server (Network Error). Please ensure your backend is running on http://localhost:5000.');
+        } else {
+          setStatusMessage(rawMessage || 'Failed to verify invite link.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    if (token) {
-      fetchInvite();
-    }
+    fetchInvite();
   }, [token]);
 
   const handleAccept = async () => {
