@@ -69,17 +69,45 @@ export const confirmPayment = async (cartId) => {
   return response.data;
 };
 
-// Complete billing flow (create cart, add items, process payment, confirm)
+// Complete billing flow with Fast Single-Trip Checkout & Fallback
 export const generateBill = async (billData) => {
   const { storeId, products, paymentMethod, subtotal, discount, totalAmount, customerName, customerPhone, customerEmail, buyerId } = billData;
 
-  // Step 1: Create cart
-  const cart = await createBillingSession(storeId);
+  // FAST PATH: Try optimized single-trip quick checkout
+  try {
+    const quickResponse = await apiPost("/cart/quick-checkout", {
+      storeId,
+      products,
+      paymentMethod,
+      subtotal,
+      discount,
+      totalAmount,
+      buyerId,
+      customerName,
+      customerPhone,
+      customerEmail,
+    });
 
-  // Step 2: Start scanning
+    if (quickResponse?.data) {
+      return {
+        ...(quickResponse.data?.data || quickResponse.data),
+        ...billData,
+        storeInfo: billData.storeInfo,
+      };
+    }
+  } catch (quickErr) {
+    console.warn("Quick checkout failed or not supported, falling back to multi-step checkout:", quickErr?.message);
+    // If it's a 400 validation error (e.g. Insufficient stock), do NOT fallback, throw immediately
+    if (quickErr?.response?.status === 400 || quickErr?.response?.data?.statusCode === 400) {
+      throw quickErr;
+    }
+  }
+
+  // FALLBACK PATH: Standard multi-step session
+  const cart = await createBillingSession(storeId);
   await startScanning(cart._id);
 
-  // Step 3: Add all products
+  // Add products to cart
   for (const item of products) {
     await addItemToBill(
       cart._id,
@@ -88,7 +116,7 @@ export const generateBill = async (billData) => {
     );
   }
 
-  // Step 4: Process payment (Now includes discount & customer info)
+  // Process payment
   await processPayment(cart._id, paymentMethod, subtotal, discount, totalAmount, {
     buyerId,
     customerName,
@@ -96,7 +124,7 @@ export const generateBill = async (billData) => {
     customerEmail,
   });
 
-  // Step 5: Confirm payment (automatically updates inventory)
+  // Confirm payment
   const finalCart = await confirmPayment(cart._id);
 
   return {

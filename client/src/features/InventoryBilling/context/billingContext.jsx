@@ -648,7 +648,7 @@ export const BillingProvider = ({ children }) => {
         // Save bill data for PDF download / preview
         // Merge server response (has _id, billNumber) with local billData (has full details)
         const elapsed = Date.now() - startTime;
-        const minPrintDuration = 2500;
+        const minPrintDuration = 600; // Optimized snappy visual feedback (reduced from 2500ms)
         if (elapsed < minPrintDuration) {
           await new Promise((resolve) => setTimeout(resolve, minPrintDuration - elapsed));
         }

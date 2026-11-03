@@ -1,6 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Lottie } from "lottie-react";
+import addBuyerAnimation from "@/assets/addBuyers/VyaparSathi — Add Buyer · 4.5s.json";
 import { useBuyerPage } from "../hooks/useBuyerPage";
 import BuyerFormModal from "./BuyerFormModal";
 
@@ -18,6 +21,12 @@ const SkeletonRow = () => (
 );
 
 export default function BuyerPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     storeId,
     buyers, loading, error,
@@ -71,13 +80,33 @@ export default function BuyerPage() {
             </div>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex-shrink-0 py-2 sm:py-2.5 px-3 sm:px-4 shadow-lg flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              className="relative flex-shrink-0 py-2 sm:py-2.5 pl-2 sm:pl-2.5 pr-4 sm:pr-5 shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/35 flex items-center gap-2.5 sm:gap-3.5 text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl transition-all group overflow-visible"
             >
-              <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="sm:hidden">Add</span>
-              <span className="hidden sm:inline">Add Buyer</span>
+              {/* Left Half Yellowish Gradient Accent */}
+              <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-amber-400 via-amber-400/80 to-transparent opacity-90" />
+                <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-yellow-300/40 rounded-full blur-md" />
+              </div>
+
+              {/* Lottie Animation on Left */}
+              <div className="relative z-10 w-8 h-8 sm:w-10 sm:h-10 -my-2 flex-shrink-0 flex items-center justify-center overflow-visible transition-transform duration-200 group-hover:scale-110">
+                {mounted ? (
+                  <Lottie
+                    src={addBuyerAnimation}
+                    loop
+                    autoplay
+                    className="w-full h-full object-contain scale-[2.2] pointer-events-none select-none"
+                  />
+                ) : (
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                )}
+              </div>
+
+              {/* Text with clear separation / padding */}
+              <span className="relative z-10 sm:hidden">Add</span>
+              <span className="relative z-10 hidden sm:inline pl-0.5">Add Buyer</span>
             </button>
           </div>
         </section>
