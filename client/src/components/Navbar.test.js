@@ -87,9 +87,10 @@ describe("Navbar Component", () => {
 
       // Check for public navigation items (appear in desktop and mobile)
       expect(screen.getAllByText("Home").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Features").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Pricing").length).toBeGreaterThan(0);
       expect(screen.getAllByText("About").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Docs").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Features").length).toBeGreaterThan(0);
     });
 
     it("renders Dashboard, Samvad, Settings for authenticated user on app pages", () => {
@@ -125,6 +126,7 @@ describe("Navbar Component", () => {
       expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
       expect(screen.getAllByText(/Samvad/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText("Features").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Pricing").length).toBeGreaterThan(0);
       expect(screen.getAllByText("About").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Docs").length).toBeGreaterThan(0);
     });

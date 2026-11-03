@@ -44,6 +44,11 @@ const NAV_ITEMS_PUBLIC = [
     icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z",
   },
   {
+    label: "Pricing",
+    href: "/pricing",
+    icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+  },
+  {
     label: "About",
     href: "/about",
     icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
@@ -77,17 +82,23 @@ export default function Navbar() {
   const { isAuthenticated, isLoading, isSubmitting, logout, user } = useAuth();
   const { isStorePage, toggleStoreSidebar } = useStorePageContext();
 
-  const isHomePage = pathname === "/" || pathname === "";
+  const isMarketingPage =
+    pathname === "/" ||
+    pathname === "" ||
+    pathname === "/pricing" ||
+    pathname === "/about" ||
+    pathname === "/features" ||
+    pathname === "/documents";
 
   // Dynamic navigation items based on auth state and current page location
   const navItems = useMemo(() => {
-    // 1. Non-logged-in visitors: Home, Features, About, Docs
+    // 1. Non-logged-in visitors: Home, Features, Pricing, About, Docs
     if (!isAuthenticated) {
       return NAV_ITEMS_PUBLIC;
     }
 
-    // 2. Logged-in user on the Home page: show public links along with Dashboard & Samvad
-    if (isHomePage) {
+    // 2. Logged-in user on marketing pages: show marketing links along with Dashboard & Samvad
+    if (isMarketingPage) {
       return [
         {
           label: "Home",
@@ -111,6 +122,11 @@ export default function Navbar() {
           icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z",
         },
         {
+          label: "Pricing",
+          href: "/pricing",
+          icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+        },
+        {
           label: "About",
           href: "/about",
           icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
@@ -125,7 +141,7 @@ export default function Navbar() {
 
     // 3. Logged-in user on app pages: Dashboard, Samvad (Copilot), Settings
     return NAV_ITEMS_LOGGED_IN;
-  }, [isAuthenticated, isHomePage]);
+  }, [isAuthenticated, isMarketingPage]);
 
   const getTranslatedLabel = (label) => {
     switch (label) {
@@ -138,12 +154,14 @@ export default function Navbar() {
         return t("navigation.settings") || "Settings";
       case "Home":
         return t("navigation.home") || "Home";
+      case "Features":
+        return t("navigation.features") || "Features";
+      case "Pricing":
+        return t("navigation.pricing") || "Pricing";
       case "About":
         return t("navigation.about") || "About";
       case "Docs":
         return t("navigation.docs") || "Docs";
-      case "Features":
-        return t("navigation.features") || "Features";
       default:
         return label;
     }
@@ -153,7 +171,7 @@ export default function Navbar() {
     if (item.href === "/") {
       return pathname === "/" || pathname === "";
     }
-    return pathname === item.href || pathname.startsWith(item.href);
+    return pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
   };
 
   const close = () => setMobileMenuOpen(false);
