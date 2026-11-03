@@ -194,3 +194,6 @@ export function useWorkspaceContext() {
   }
   return context;
 }
+
+// Alias for convenience
+export const useWorkspace = useWorkspaceContext;

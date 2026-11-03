@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useWorkspaceContext } from "@/context/WorkspaceContext";
 import { fetchAllStores } from "@/features/storeDashboard/services/storeDashboardService";
 import AskCopilotSection from "@/features/aiDashboard/components/sections/AskCopilotSection";
 import ChatHistorySidebar from "@/features/aiDashboard/components/ChatHistorySidebar";
@@ -13,6 +14,17 @@ import { Store, Loader2 } from "lucide-react";
 
 export default function ChatViewContainer({ initialChatId = null }) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  let workspaceContext = null;
+  try {
+    workspaceContext = useWorkspaceContext();
+  } catch (_) {
+    // Graceful fallback if rendered outside WorkspaceProvider in standalone tests
+  }
+  const workspaces = workspaceContext?.workspaces || [];
+  const currentWorkspaceStoreId =
+    workspaceContext?.selectedStoreId ||
+    workspaceContext?.currentWorkspace?.storeId ||
+    null;
   const router = useRouter();
   const pathname = usePathname();
 
@@ -85,6 +97,35 @@ export default function ChatViewContainer({ initialChatId = null }) {
     const loadStores = async () => {
       try {
         setLoadingStores(true);
+
+        // If workspaces are resolved from WorkspaceContext, use them directly
+        if (Array.isArray(workspaces) && workspaces.length > 0) {
+          const workspaceStores = workspaces.map((w) => ({
+            _id: w.storeId,
+            id: w.storeId,
+            name: `${w.storeName}${w.role && w.role !== "Owner" ? ` (${w.role})` : ""}`,
+            rawName: w.storeName,
+            isOwner: w.isOwner,
+            role: w.role,
+            businessType: w.businessType,
+          }));
+
+          if (isMounted) {
+            setStores(workspaceStores);
+            const hasMatch = workspaceStores.some(
+              (s) => (s._id || s.id) === selectedStoreId
+            );
+            if (!selectedStoreId || !hasMatch) {
+              const defaultId = currentWorkspaceStoreId || workspaceStores[0]._id;
+              setSelectedStoreId(defaultId);
+              try {
+                localStorage.setItem("vyapar_chat_store_id", defaultId);
+              } catch (_) {}
+            }
+          }
+          return;
+        }
+
         const res = await fetchAllStores();
         const storeList = res?.data || res?.stores || (Array.isArray(res) ? res : []);
         if (isMounted) {
@@ -94,7 +135,7 @@ export default function ChatViewContainer({ initialChatId = null }) {
               (s) => (s._id || s.id) === selectedStoreId
             );
             if (!selectedStoreId || !hasMatch) {
-              const defaultId = storeList[0]._id || storeList[0].id;
+              const defaultId = currentWorkspaceStoreId || storeList[0]._id || storeList[0].id;
               setSelectedStoreId(defaultId);
               try {
                 localStorage.setItem("vyapar_chat_store_id", defaultId);
@@ -115,7 +156,7 @@ export default function ChatViewContainer({ initialChatId = null }) {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, selectedStoreId]);
+  }, [isAuthenticated, selectedStoreId, workspaces, currentWorkspaceStoreId]);
 
   // Switch store handler - purely internal state & localStorage, NO query parameters in URL
   const handleStoreChange = (e) => {
