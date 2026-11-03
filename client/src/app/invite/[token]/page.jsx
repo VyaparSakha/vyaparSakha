@@ -40,23 +40,33 @@ export default function InvitePage() {
       try {
         setLoading(true);
         const cleanToken = encodeURIComponent(String(token).trim());
-        // Call backend validation API with fallback to /invite/:token
-        let response;
+        // Call backend validation API: try /invitations/:token, fallback to /invite/:token for live production
+        let response = null;
+        let lastError = null;
+
         try {
           response = await apiGet(`/invitations/${cleanToken}`);
-        } catch (initialErr) {
-          if (initialErr?.statusCode === 404 || initialErr?.response?.status === 404) {
+        } catch (err1) {
+          lastError = err1;
+          try {
             response = await apiGet(`/invite/${cleanToken}`);
-          } else {
-            throw initialErr;
+          } catch (err2) {
+            lastError = err2;
           }
         }
 
-        if (response?.data?.valid) {
-          setInviteData(response.data);
+        if (!response) {
+          throw lastError || new Error('Failed to verify invite link.');
+        }
+
+        const data = response?.data || response;
+        const isValid = Boolean(data?.valid || data?.storeName || (response?.success && data?.roleName));
+
+        if (isValid) {
+          setInviteData(data);
           setInviteStatus('pending');
         } else {
-          const status = response?.data?.status || 'invalid';
+          const status = data?.status || 'invalid';
           setInviteStatus(status);
           setStatusMessage(response?.message || 'Invalid or expired invite link.');
         }
@@ -67,7 +77,7 @@ export default function InvitePage() {
         setInviteStatus(status);
         const rawMessage = (typeof err === 'string' ? err : err?.message || err?.error) || '';
         if (rawMessage === 'Network Error' || rawMessage.includes('ECONNREFUSED') || rawMessage.includes('Failed to fetch')) {
-          setStatusMessage('Could not connect to the backend server (Network Error). Please ensure your backend is running on http://localhost:5000.');
+          setStatusMessage('Could not connect to the backend server (Network Error). Please ensure your backend is reachable.');
         } else {
           setStatusMessage(rawMessage || 'Failed to verify invite link.');
         }
@@ -94,14 +104,21 @@ export default function InvitePage() {
 
     setActionLoading(true);
     try {
-      const response = await apiPost(`/invitations/${token}/accept`);
-      if (response?.success || response?.data?.storeId) {
+      let response;
+      try {
+        response = await apiPost(`/invitations/${token}/accept`);
+      } catch (err1) {
+        // Fallback to legacy production route
+        response = await apiPost(`/invite/${token}/accept`);
+      }
+
+      if (response?.success || response?.data?.storeId || response?.data?.employeeId) {
         toast.success(response?.message || 'Successfully joined store!');
         setInviteStatus('success');
         // Refresh workspaces so the new store membership appears immediately
         await refreshWorkspaces();
         setTimeout(() => {
-          const targetStoreId = response?.data?.storeId;
+          const targetStoreId = response?.data?.storeId || response?.data?.store;
           if (targetStoreId) {
             router.push(`/storeDashboard/${targetStoreId}`);
           } else {
@@ -123,7 +140,17 @@ export default function InvitePage() {
 
   const handleDecline = async () => {
     if (!confirm('Are you sure you want to decline this invitation?')) return;
-    router.push('/');
+    try {
+      try {
+        await apiPost(`/invitations/${token}/decline`);
+      } catch (_) {
+        await apiPost(`/invite/${token}/decline`);
+      }
+      toast.success('Invitation declined');
+      router.push('/');
+    } catch (err) {
+      toast.error(err?.message || 'Failed to decline invitation');
+    }
   };
 
   // Check email mismatch

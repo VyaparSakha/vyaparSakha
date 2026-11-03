@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useContext, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { useWorkspaceContext } from '@/context/WorkspaceContext';
 
 /**
@@ -26,7 +27,37 @@ export const usePermission = (explicitPermissions, explicitIsOwner) => {
     workspaceContext = null;
   }
 
-  const currentWorkspace = workspaceContext?.currentWorkspace || null;
+  let routeStoreId = null;
+  try {
+    if (typeof useParams === 'function') {
+      const params = useParams();
+      routeStoreId = params?.storeId || null;
+    }
+  } catch (_) {
+    routeStoreId = null;
+  }
+
+  // Resolve active workspace:
+  // If routeStoreId is present in URL and available in workspaces, use it directly
+  // so multi-store navigation stays synchronous with the current route.
+  const currentWorkspace = useMemo(() => {
+    if (routeStoreId && Array.isArray(workspaceContext?.workspaces)) {
+      const matched = workspaceContext.workspaces.find((w) => w.storeId === routeStoreId);
+      if (matched) return matched;
+    }
+    return workspaceContext?.currentWorkspace || null;
+  }, [routeStoreId, workspaceContext?.workspaces, workspaceContext?.currentWorkspace]);
+
+  // Is the user an authorized member of the active store workspace?
+  const isMember = useMemo(() => {
+    if (typeof explicitIsOwner === 'boolean' || Array.isArray(explicitPermissions)) {
+      return true;
+    }
+    if (!workspaceContext) return true;
+    if (workspaceContext.isLoading) return true; // optimistic while loading
+    if (!routeStoreId) return Boolean(currentWorkspace);
+    return Boolean(workspaceContext.workspaces?.some((w) => w.storeId === routeStoreId));
+  }, [explicitIsOwner, explicitPermissions, workspaceContext, routeStoreId, currentWorkspace]);
 
   // Determine effective ownership and permissions
   const isOwner = useMemo(() => {
@@ -97,6 +128,9 @@ export const usePermission = (explicitPermissions, explicitIsOwner) => {
     currentRole,
     currentWorkspace,
     permissions: effectivePermissions,
+    isMember,
+    isLoading: workspaceContext?.isLoading ?? false,
+    routeStoreId,
   };
 };
 

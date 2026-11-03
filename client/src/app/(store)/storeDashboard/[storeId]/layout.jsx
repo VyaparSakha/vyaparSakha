@@ -8,6 +8,8 @@ import StoreSidebarDrawer from "@/features/store/components/StoreSidebarDrawer";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import { InventoryProvider } from "@/features/inventory/context/inventoryContext";
 import { useAgentNavigation } from "@/hooks/useAgentNavigation";
+import { useWorkspaceContext } from "@/context/WorkspaceContext";
+import StoreRouteGuard from "@/components/Guard/StoreRouteGuard";
 
 /**
  * Store Dashboard Layout - Responsive sidebar across screen sizes:
@@ -17,13 +19,21 @@ import { useAgentNavigation } from "@/hooks/useAgentNavigation";
  */
 export default function StoreLayout({ children }) {
   const pathname = usePathname();
-  const isBillingPage = pathname.endsWith("/billing");
+  const isBillingPage = pathname?.endsWith("/billing");
   const { enterStorePage, exitStorePage, copilotOpen, copilotWidth, isDraggingCopilot } = useStorePageContext();
   const [screenMode, setScreenMode] = useState("desktop"); // "mobile" | "tablet" | "desktop"
   const { storeId } = useParams();
+  const { selectedStoreId, selectWorkspace } = useWorkspaceContext();
 
   // Allow the AI agent to navigate to different store pages
   useAgentNavigation(storeId);
+
+  // Sync active workspace context when opening store route directly
+  useEffect(() => {
+    if (storeId && selectedStoreId !== storeId) {
+      selectWorkspace(storeId);
+    }
+  }, [storeId, selectedStoreId, selectWorkspace]);
 
   useEffect(() => {
     // When entering store dashboard, set store page context
@@ -54,7 +64,13 @@ export default function StoreLayout({ children }) {
   }, []);
 
   if (isBillingPage) {
-    return <>{children}</>;
+    return (
+      <InventoryProvider>
+        <StoreRouteGuard>
+          {children}
+        </StoreRouteGuard>
+      </InventoryProvider>
+    );
   }
 
   const isMobile = screenMode === "mobile";
@@ -93,7 +109,9 @@ export default function StoreLayout({ children }) {
             <StoreBreadcrumb isResponsive={isMobile} />
           </div>
 
-          {children}
+          <StoreRouteGuard>
+            {children}
+          </StoreRouteGuard>
         </main>
       </div>
 

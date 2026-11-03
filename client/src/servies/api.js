@@ -172,7 +172,25 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error.response?.data || error.message);
+    const responseData = error.response?.data;
+    const statusCode = error.response?.status;
+    let rejectedError;
+
+    if (typeof responseData === 'object' && responseData !== null) {
+      rejectedError = { ...responseData, status: statusCode, statusCode };
+    } else {
+      rejectedError = {
+        message: typeof responseData === 'string' && responseData.includes('<html')
+          ? error.message || 'API request failed'
+          : responseData || error.message || 'Unknown network error',
+        rawBody: responseData,
+        status: statusCode,
+        statusCode,
+        isHtml: typeof responseData === 'string' && responseData.includes('<html'),
+      };
+    }
+
+    return Promise.reject(rejectedError);
   }
 );
 

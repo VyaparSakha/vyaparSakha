@@ -329,7 +329,7 @@ export default function StoreSidebarDrawer() {
   const { currentStore } = useInventoryContext();
   const [showFullName, setShowFullName] = useState(false);
   const { t } = useTranslation();
-  const { hasPermission, isOwner, currentRole, currentWorkspace } = usePermission();
+  const { hasPermission, hasAnyPermission, isOwner, currentRole, currentWorkspace } = usePermission();
 
   const isPurchaseRoute = Boolean(pathname?.includes("/purchases"));
   const [isPurchasesOpen, setIsPurchasesOpen] = useState(isPurchaseRoute);
@@ -346,35 +346,41 @@ export default function StoreSidebarDrawer() {
         label: t("purchases.title"),
         href: `/storeDashboard/${storeId}/purchases`,
         key: "purchases",
+        visible: isOwner || hasAnyPermission(["inventory:add", "inventory:manage"]),
       },
       {
         label: t("purchases.purchaseOrders"),
         href: `/storeDashboard/${storeId}/purchases/orders`,
         key: "purchases-orders",
+        visible: isOwner || hasAnyPermission(["inventory:add", "inventory:manage"]),
       },
       {
         label: t("purchases.grn"),
         href: `/storeDashboard/${storeId}/purchases/grns`,
         key: "purchases-grns",
+        visible: isOwner || hasAnyPermission(["inventory:add", "inventory:manage"]),
       },
       {
         label: t("purchases.smartReorder"),
         href: `/storeDashboard/${storeId}/purchases/smart-reorder`,
         key: "purchases-reorder",
         badge: "AI",
+        visible: isOwner || hasPermission("inventory:manage"),
       },
       {
         label: t("analytics.title"),
         href: `/storeDashboard/${storeId}/purchases/analytics`,
         key: "purchases-analytics",
+        visible: isOwner || hasPermission("reports:view_sales"),
       },
       {
         label: t("purchases.subtitle"),
         href: `/storeDashboard/${storeId}/purchases/reports`,
         key: "purchases-reports",
+        visible: isOwner || hasPermission("reports:view_sales"),
       },
-    ],
-    [storeId, t]
+    ].filter((sub) => sub.visible),
+    [storeId, t, isOwner, hasPermission, hasAnyPermission]
   );
 
   const getStoreInitials = (name) => {
@@ -683,42 +689,48 @@ export default function StoreSidebarDrawer() {
         {/* Navigation list */}
         <div style={{ flex: 1, overflowY: "auto" }} className="no-scrollbar">
           {/* Main Dashboard Section */}
-          <div style={{ padding: "0 4px", marginBottom: 6 }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>
-              MAIN DASHBOARD
-            </p>
-            {navItems.filter((i) => ["overview", "inventory"].includes(i.key)).map((item) => (
-              <NavLink
-                key={item.key}
-                label={item.label}
-                href={item.href}
-                icon={icons[item.label]}
-                active={activeNav === item.key}
-                onClick={handleNavClick}
-              />
-            ))}
-          </div>
-
-          <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 8px 6px 8px" }}></div>
+          {navItems.some((i) => ["overview", "inventory"].includes(i.key)) && (
+            <>
+              <div style={{ padding: "0 4px", marginBottom: 6 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>
+                  MAIN DASHBOARD
+                </p>
+                {navItems.filter((i) => ["overview", "inventory"].includes(i.key)).map((item) => (
+                  <NavLink
+                    key={item.key}
+                    label={item.label}
+                    href={item.href}
+                    icon={icons[item.label]}
+                    active={activeNav === item.key}
+                    onClick={handleNavClick}
+                  />
+                ))}
+              </div>
+              <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 8px 6px 8px" }}></div>
+            </>
+          )}
 
           {/* Sales Section */}
-          <div style={{ padding: "0 4px", marginBottom: 6 }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>
-              SALES & BILLS
-            </p>
-            {navItems.filter((i) => ["billing", "billing-history"].includes(i.key)).map((item) => (
-              <NavLink
-                key={item.key}
-                label={item.label}
-                href={item.href}
-                icon={icons[item.label]}
-                active={activeNav === item.key}
-                onClick={handleNavClick}
-              />
-            ))}
-          </div>
-
-          <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 8px 6px 8px" }}></div>
+          {navItems.some((i) => ["billing", "billing-history"].includes(i.key)) && (
+            <>
+              <div style={{ padding: "0 4px", marginBottom: 6 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>
+                  SALES & BILLS
+                </p>
+                {navItems.filter((i) => ["billing", "billing-history"].includes(i.key)).map((item) => (
+                  <NavLink
+                    key={item.key}
+                    label={item.label}
+                    href={item.href}
+                    icon={icons[item.label]}
+                    active={activeNav === item.key}
+                    onClick={handleNavClick}
+                  />
+                ))}
+              </div>
+              <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 8px 6px 8px" }}></div>
+            </>
+          )}
 
           {/* Management Section (Visible only if user has at least one permitted item) */}
           {navItems.some((i) => ["purchases", "sellers", "buyers", "staff", "analytics"].includes(i.key)) && (
@@ -953,47 +965,49 @@ export default function StoreSidebarDrawer() {
           </div>
         </div>
 
-        {/* Settings Button */}
-        <Link href={`/storeDashboard/${storeId}/settings`}>
-          <button
-            onClick={handleNavClick}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "7.5px 11px",
-              borderRadius: 10,
-              border: "none",
-              background: pathname?.includes("/settings") ? "#2563eb" : "transparent",
-              color: pathname?.includes("/settings") ? "#fff" : "#7a97be",
-              fontWeight: pathname?.includes("/settings") ? 600 : 400,
-              fontSize: 13.5,
-              fontFamily: "'Segoe UI', sans-serif",
-              cursor: "pointer",
-              textAlign: "left",
-              transition: "background 0.13s, color 0.13s",
-              marginTop: 2,
-            }}
-            onMouseEnter={(e) => {
-              if (!pathname?.includes("/settings")) {
-                e.currentTarget.style.background = "#223350";
-                e.currentTarget.style.color = "#b8d0ef";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!pathname?.includes("/settings")) {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "#7a97be";
-              }
-            }}
-          >
-            <span style={{ opacity: pathname?.includes("/settings") ? 1 : 0.8, flexShrink: 0, display: "flex" }}>
-              {icons.Settings}
-            </span>
-            <span style={{ whiteSpace: "nowrap" }}>{t("navigation.settings")}</span>
-          </button>
-        </Link>
+        {/* Settings Button - Owner Only */}
+        {isOwner && (
+          <Link href={`/storeDashboard/${storeId}/settings`}>
+            <button
+              onClick={handleNavClick}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "7.5px 11px",
+                borderRadius: 10,
+                border: "none",
+                background: pathname?.includes("/settings") ? "#2563eb" : "transparent",
+                color: pathname?.includes("/settings") ? "#fff" : "#7a97be",
+                fontWeight: pathname?.includes("/settings") ? 600 : 400,
+                fontSize: 13.5,
+                fontFamily: "'Segoe UI', sans-serif",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "background 0.13s, color 0.13s",
+                marginTop: 2,
+              }}
+              onMouseEnter={(e) => {
+                if (!pathname?.includes("/settings")) {
+                  e.currentTarget.style.background = "#223350";
+                  e.currentTarget.style.color = "#b8d0ef";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!pathname?.includes("/settings")) {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "#7a97be";
+                }
+              }}
+            >
+              <span style={{ opacity: pathname?.includes("/settings") ? 1 : 0.8, flexShrink: 0, display: "flex" }}>
+                {icons.Settings}
+              </span>
+              <span style={{ whiteSpace: "nowrap" }}>{t("navigation.settings")}</span>
+            </button>
+          </Link>
+        )}
 
         {/* Logout Button */}
         <button
