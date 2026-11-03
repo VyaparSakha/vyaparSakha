@@ -74,7 +74,7 @@ describe("Navbar Component", () => {
       expect(screen.getAllByText("Sathi").length).toBeGreaterThan(0);
     });
 
-    it("renders all navigation links", () => {
+    it("renders navigation links for unauthenticated user", () => {
       useAuth.mockReturnValue({
         isAuthenticated: false,
         isLoading: false,
@@ -85,12 +85,48 @@ describe("Navbar Component", () => {
 
       render(<Navbar />);
 
-      // Check for navigation items (appear in both desktop and mobile)
-      expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Samvad/i).length).toBeGreaterThan(0);
+      // Check for public navigation items (appear in desktop and mobile)
+      expect(screen.getAllByText("Home").length).toBeGreaterThan(0);
       expect(screen.getAllByText("About").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Docs").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Features").length).toBeGreaterThan(0);
+    });
+
+    it("renders Dashboard, Samvad, Settings for authenticated user on app pages", () => {
+      usePathname.mockReturnValue("/storeDashboard");
+      useAuth.mockReturnValue({
+        isAuthenticated: true,
+        isLoading: false,
+        isSubmitting: false,
+        logout: jest.fn(),
+        user: { displayName: "John Doe", email: "john@example.com" },
+      });
+
+      render(<Navbar />);
+
+      expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Samvad/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Settings").length).toBeGreaterThan(0);
+    });
+
+    it("renders landing links plus Dashboard for authenticated user on Home page", () => {
+      usePathname.mockReturnValue("/");
+      useAuth.mockReturnValue({
+        isAuthenticated: true,
+        isLoading: false,
+        isSubmitting: false,
+        logout: jest.fn(),
+        user: { displayName: "John Doe", email: "john@example.com" },
+      });
+
+      render(<Navbar />);
+
+      expect(screen.getAllByText("Home").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Dashboard").length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Samvad/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Features").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("About").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Docs").length).toBeGreaterThan(0);
     });
 
     it("renders the logo with correct styling", () => {

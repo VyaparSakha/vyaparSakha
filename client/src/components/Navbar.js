@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -11,7 +11,8 @@ import NotificationBell from "@/features/notification/components/NotificationBel
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslation } from "@/i18n/LanguageContext";
 
-const NAV_ITEMS = [
+// App navigation items for authenticated users when browsing internal pages
+const NAV_ITEMS_LOGGED_IN = [
   {
     label: "Dashboard",
     href: "/storeDashboard",
@@ -24,6 +25,25 @@ const NAV_ITEMS = [
     icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z",
   },
   {
+    label: "Settings",
+    href: "/settings",
+    icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
+  },
+];
+
+// Marketing navigation items for public/non-logged-in visitors
+const NAV_ITEMS_PUBLIC = [
+  {
+    label: "Home",
+    href: "/",
+    icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+  },
+  {
+    label: "Features",
+    href: "/features",
+    icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z",
+  },
+  {
     label: "About",
     href: "/about",
     icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
@@ -32,11 +52,6 @@ const NAV_ITEMS = [
     label: "Docs",
     href: "/documents",
     icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-  },
-  {
-    label: "Features",
-    href: "/features",
-    icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z",
   },
 ];
 
@@ -61,6 +76,85 @@ export default function Navbar() {
   const profileMenuRef = useRef(null);
   const { isAuthenticated, isLoading, isSubmitting, logout, user } = useAuth();
   const { isStorePage, toggleStoreSidebar } = useStorePageContext();
+
+  const isHomePage = pathname === "/" || pathname === "";
+
+  // Dynamic navigation items based on auth state and current page location
+  const navItems = useMemo(() => {
+    // 1. Non-logged-in visitors: Home, Features, About, Docs
+    if (!isAuthenticated) {
+      return NAV_ITEMS_PUBLIC;
+    }
+
+    // 2. Logged-in user on the Home page: show public links along with Dashboard & Samvad
+    if (isHomePage) {
+      return [
+        {
+          label: "Home",
+          href: "/",
+          icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+        },
+        {
+          label: "Dashboard",
+          href: "/storeDashboard",
+          icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+        },
+        {
+          label: "Copilot",
+          href: "/chat",
+          isAi: true,
+          icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z",
+        },
+        {
+          label: "Features",
+          href: "/features",
+          icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z",
+        },
+        {
+          label: "About",
+          href: "/about",
+          icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+        },
+        {
+          label: "Docs",
+          href: "/documents",
+          icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+        },
+      ];
+    }
+
+    // 3. Logged-in user on app pages: Dashboard, Samvad (Copilot), Settings
+    return NAV_ITEMS_LOGGED_IN;
+  }, [isAuthenticated, isHomePage]);
+
+  const getTranslatedLabel = (label) => {
+    switch (label) {
+      case "Dashboard":
+        return t("navigation.dashboard") || "Dashboard";
+      case "Copilot":
+      case "Samvad":
+        return t("navigation.copilot") || "Samvad";
+      case "Settings":
+        return t("navigation.settings") || "Settings";
+      case "Home":
+        return t("navigation.home") || "Home";
+      case "About":
+        return t("navigation.about") || "About";
+      case "Docs":
+        return t("navigation.docs") || "Docs";
+      case "Features":
+        return t("navigation.features") || "Features";
+      default:
+        return label;
+    }
+  };
+
+  const isItemActive = (item) => {
+    if (item.href === "/") {
+      return pathname === "/" || pathname === "";
+    }
+    return pathname === item.href || pathname.startsWith(item.href);
+  };
 
   const close = () => setMobileMenuOpen(false);
 
@@ -138,22 +232,9 @@ export default function Navbar() {
 
           {/* Desktop nav links */}
           <div className="hidden md:flex items-center gap-6 lg:gap-8 xl:gap-10">
-            {NAV_ITEMS.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
-              const translatedLabel =
-                item.label === "Dashboard"
-                  ? t("navigation.dashboard")
-                  : item.label === "Copilot"
-                  ? (t("navigation.copilot") || "सखा संवाद")
-                  : item.label === "About"
-                  ? t("navigation.about")
-                  : item.label === "Docs"
-                  ? t("navigation.docs")
-                  : item.label === "Features"
-                  ? t("navigation.features")
-                  : item.label;
+            {navItems.map((item) => {
+              const isActive = isItemActive(item);
+              const translatedLabel = getTranslatedLabel(item.label);
 
               return (
                 <Link
@@ -368,10 +449,10 @@ export default function Navbar() {
 
             {/* Nav links */}
             <nav className="flex flex-col gap-1 flex-1">
-              {NAV_ITEMS.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/" && pathname.startsWith(item.href));
+              {navItems.map((item) => {
+                const isActive = isItemActive(item);
+                const translatedLabel = getTranslatedLabel(item.label);
+
                 return (
                   <Link
                     key={item.label}
@@ -386,7 +467,7 @@ export default function Navbar() {
                   >
                     <span
                       className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200
-                  ${isActive ? "bg-blue-100" : "bg-slate-100"}`}
+                  ${isActive ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-500"}`}
                     >
                       <svg
                         className="w-4 h-4"
@@ -403,17 +484,7 @@ export default function Navbar() {
                       </svg>
                     </span>
                     <span className="tracking-wide uppercase text-xs font-black">
-                      {item.label === "Dashboard"
-                        ? t("navigation.dashboard")
-                  : item.label === "Copilot"
-                  ? (t("navigation.copilot") || "सखा संवाद")
-                        : item.label === "About"
-                        ? t("navigation.about")
-                        : item.label === "Docs"
-                        ? t("navigation.docs")
-                        : item.label === "Features"
-                        ? t("navigation.features")
-                        : item.label}
+                      {translatedLabel}
                     </span>
                     {item.isAi && (
                       <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-xs">
