@@ -1,10 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Lottie } from 'lottie-react';
+import invitationCreatedAnimation from '@/assets/animations/invitation/VyaparSathi — Invitation created.json';
+import processingAnimation from '@/assets/animations/processing/Processing — hourglass motion · 2.8s cycles.json';
 import { useStoreStaffContext } from '../context/StoreStaffContext';
 
 const InviteEmployeeModal = ({ isOpen, onClose }) => {
   const { roles, fetchRoles, inviteEmployee } = useStoreStaffContext();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [email, setEmail] = useState('');
   const [roleId, setRoleId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -76,19 +85,47 @@ const InviteEmployeeModal = ({ isOpen, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111' }}>Invite Employee</h2>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>Send an invitation by email with a specific role</p>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9ca3af' }}>✕</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: success ? 8 : 24 }}>
+          {!success ? (
+            <div>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111' }}>Invite Employee</h2>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>Send an invitation by email with a specific role</p>
+            </div>
+          ) : <div />}
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#9ca3af' }} aria-label="Close">✕</button>
         </div>
 
         {success ? (
-          <div style={{ textAlign: 'center', padding: '16px 0' }}>
-            <div style={{ fontSize: 54, marginBottom: 16 }}>🎉</div>
-            <p style={{ fontWeight: 700, color: '#10b981', fontSize: 18, margin: '0 0 8px' }}>Invitation Created!</p>
-            <p style={{ color: '#4b5563', fontSize: 13, lineHeight: '1.5', margin: '0 0 20px' }}>
+          <div style={{ textAlign: 'center', padding: '0 0 8px' }}>
+            {/* Celebratory Lottie Animation */}
+            <div
+              style={{
+                width: 210,
+                height: 230,
+                margin: '0 auto 6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'visible',
+              }}
+              aria-label="Invitation Created"
+            >
+              {mounted ? (
+                <Lottie
+                  src={invitationCreatedAnimation}
+                  loop={false}
+                  autoplay={true}
+                  className="w-full h-full object-contain pointer-events-none select-none"
+                  style={{ width: '100%', height: '100%' }}
+                />
+              ) : (
+                <div style={{ width: 140, height: 140, borderRadius: 16, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 48 }}>🎉</span>
+                </div>
+              )}
+            </div>
+
+            <p style={{ color: '#4b5563', fontSize: 13, lineHeight: '1.5', margin: '4px 0 20px' }}>
               We attempted to send an invitation email to <strong style={{ color: '#1f2937' }}>{email}</strong>.
               If they don't receive it, you can share the secure link below directly:
             </p>
@@ -216,16 +253,78 @@ const InviteEmployeeModal = ({ isOpen, onClose }) => {
               <button
                 type="button"
                 onClick={onClose}
-                style={{ flex: 1, padding: '12px 0', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                disabled={loading}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  padding: '12px 0',
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                style={{ flex: 1, padding: '12px 0', background: loading ? '#a5b4fc' : '#4f46e5', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  padding: loading ? 0 : '12px 0',
+                  background: loading ? 'transparent' : '#4f46e5',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  transition: 'all 0.2s',
+                }}
               >
-                {loading ? 'Sending...' : '📧 Send Invite'}
+                {loading ? (
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'visible',
+                    }}
+                  >
+                    {mounted && (
+                      <Lottie
+                        src={processingAnimation}
+                        loop={true}
+                        autoplay={true}
+                        className="w-full h-full object-contain pointer-events-none select-none"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          maxHeight: 48,
+                          transform: 'scale(1.15)',
+                        }}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  '📧 Send Invite'
+                )}
               </button>
             </div>
           </form>
