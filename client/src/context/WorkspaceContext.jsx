@@ -30,8 +30,33 @@ export function WorkspaceProvider({ children }) {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await apiGet('/me/workspaces');
-      const workspaceList = Array.isArray(res?.data) ? res.data : [];
+      let workspaceList = [];
+
+      try {
+        const res = await apiGet('/me/workspaces');
+        workspaceList = Array.isArray(res?.data) ? res.data : [];
+      } catch (meErr) {
+        // Fallback for deployed servers where /me/workspaces has not yet finished deploying:
+        // Use GET /store/all to populate owned stores so owners are never locked out
+        console.warn('[WORKSPACE_CONTEXT] /me/workspaces unavailable, attempting fallback to /store/all:', meErr);
+        try {
+          const fallbackRes = await apiGet('/store/all');
+          const rawStores = Array.isArray(fallbackRes?.data) ? fallbackRes.data : [];
+          workspaceList = rawStores.map((s) => ({
+            storeId: String(s._id || s.id),
+            storeName: s.name,
+            businessType: s.businessType,
+            membershipType: 'owner',
+            role: 'Owner',
+            isOwner: true,
+            permissions: ['*'],
+            status: 'active',
+          }));
+        } catch (fallbackErr) {
+          throw meErr || fallbackErr;
+        }
+      }
+
       setWorkspaces(workspaceList);
       return workspaceList;
     } catch (err) {

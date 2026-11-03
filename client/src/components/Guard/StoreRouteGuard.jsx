@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { usePermission } from '@/hooks/usePermission';
+import { useWorkspaceContext } from '@/context/WorkspaceContext';
 import { ShieldAlert, Lock, ArrowLeft, Store, RefreshCw, AlertTriangle } from 'lucide-react';
 
 /**
@@ -142,6 +143,14 @@ export default function StoreRouteGuard({ children }) {
     isLoading,
   } = usePermission();
 
+  let workspaceError = null;
+  let refreshWorkspaces = null;
+  try {
+    const wsCtx = useWorkspaceContext();
+    workspaceError = wsCtx?.error;
+    refreshWorkspaces = wsCtx?.refreshWorkspaces;
+  } catch (_) {}
+
   // Extract storeId and subPath from pathname
   // Expected structure: /storeDashboard/[storeId]/[...subPath]
   const pathParts = (pathname || '').split('/').filter(Boolean);
@@ -158,6 +167,44 @@ export default function StoreRouteGuard({ children }) {
           <RefreshCw className="w-6 h-6 text-blue-600 animate-spin" />
         </div>
         <p className="text-sm font-medium text-slate-600">Verifying workspace permissions...</p>
+      </div>
+    );
+  }
+
+  // 1b. Connection error state
+  if (workspaceError && !isMember) {
+    return (
+      <div className="flex items-center justify-center min-h-[75vh] px-4 py-8">
+        <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xl p-6 sm:p-8 text-center transition-all animate-in fade-in zoom-in-95 duration-200">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-4 shadow-xs">
+            <RefreshCw size={26} />
+          </div>
+
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+            Unable to Load Workspace
+          </h2>
+          <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+            Could not communicate with the backend server ({workspaceError}). Please check your server status and retry.
+          </p>
+
+          <div className="mt-6 flex flex-col sm:flex-row gap-2.5">
+            <button
+              type="button"
+              onClick={() => refreshWorkspaces?.()}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors shadow-xs"
+            >
+              <RefreshCw size={16} />
+              Retry Connection
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/storeDashboard')}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium text-sm transition-colors"
+            >
+              My Stores
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

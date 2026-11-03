@@ -42,7 +42,7 @@ export const usePermission = (explicitPermissions, explicitIsOwner) => {
   // so multi-store navigation stays synchronous with the current route.
   const currentWorkspace = useMemo(() => {
     if (routeStoreId && Array.isArray(workspaceContext?.workspaces)) {
-      const matched = workspaceContext.workspaces.find((w) => w.storeId === routeStoreId);
+      const matched = workspaceContext.workspaces.find((w) => String(w.storeId) === String(routeStoreId));
       if (matched) return matched;
     }
     return workspaceContext?.currentWorkspace || null;
@@ -56,7 +56,7 @@ export const usePermission = (explicitPermissions, explicitIsOwner) => {
     if (!workspaceContext) return true;
     if (workspaceContext.isLoading) return true; // optimistic while loading
     if (!routeStoreId) return Boolean(currentWorkspace);
-    return Boolean(workspaceContext.workspaces?.some((w) => w.storeId === routeStoreId));
+    return Boolean(workspaceContext.workspaces?.some((w) => String(w.storeId) === String(routeStoreId)));
   }, [explicitIsOwner, explicitPermissions, workspaceContext, routeStoreId, currentWorkspace]);
 
   // Determine effective ownership and permissions
