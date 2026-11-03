@@ -145,8 +145,9 @@ export default function StoreRouteGuard({ children }) {
 
   let workspaceError = null;
   let refreshWorkspaces = null;
+  let wsCtx = null;
   try {
-    const wsCtx = useWorkspaceContext();
+    wsCtx = useWorkspaceContext();
     workspaceError = wsCtx?.error;
     refreshWorkspaces = wsCtx?.refreshWorkspaces;
   } catch (_) {}
@@ -159,8 +160,26 @@ export default function StoreRouteGuard({ children }) {
   const subPathParts = storeDashboardIdx !== -1 ? pathParts.slice(storeDashboardIdx + 2) : [];
   const subPath = subPathParts.length > 0 ? '/' + subPathParts.join('/') : '';
 
+  // Auto-resolve store workspace directly from backend before locking user out
+  const [resolvingStore, setResolvingStore] = React.useState(false);
+  const [resolutionAttempted, setResolutionAttempted] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isMember && storeIdFromUrl && !isLoading && !resolutionAttempted) {
+      if (typeof wsCtx?.resolveStoreWorkspace === 'function') {
+        setResolvingStore(true);
+        wsCtx.resolveStoreWorkspace(storeIdFromUrl).finally(() => {
+          setResolvingStore(false);
+          setResolutionAttempted(true);
+        });
+      } else {
+        setResolutionAttempted(true);
+      }
+    }
+  }, [isMember, storeIdFromUrl, isLoading, resolutionAttempted, wsCtx]);
+
   // 1. Loading state: keep UI smooth while checking workspace permissions
-  if (isLoading) {
+  if (isLoading || resolvingStore) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[55vh] p-8 text-center">
         <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 shadow-sm animate-pulse mb-4">

@@ -34,22 +34,27 @@ export function WorkspaceProvider({ children }) {
 
       try {
         const res = await apiGet('/me/workspaces');
-        workspaceList = Array.isArray(res?.data) ? res.data : [];
+        const rawResList = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        workspaceList = rawResList;
       } catch (meErr) {
         // Fallback for deployed servers where /me/workspaces has not yet finished deploying:
         // Use GET /store/all to populate owned stores so owners are never locked out
         console.warn('[WORKSPACE_CONTEXT] /me/workspaces unavailable, attempting fallback to /store/all:', meErr);
         try {
           const fallbackRes = await apiGet('/store/all');
-          const rawStores = Array.isArray(fallbackRes?.data) ? fallbackRes.data : [];
+          const rawStores = Array.isArray(fallbackRes?.data)
+            ? fallbackRes.data
+            : Array.isArray(fallbackRes)
+            ? fallbackRes
+            : [];
           workspaceList = rawStores.map((s) => ({
             storeId: String(s._id || s.id),
             storeName: s.name,
             businessType: s.businessType,
-            membershipType: 'owner',
-            role: 'Owner',
-            isOwner: true,
-            permissions: ['*'],
+            membershipType: s.isEmployee ? 'employee' : 'owner',
+            role: s.userRole || (s.isEmployee ? 'Employee' : 'Owner'),
+            isOwner: !s.isEmployee,
+            permissions: s.isEmployee ? (s.permissions || []) : ['*'],
             status: 'active',
           }));
         } catch (fallbackErr) {
@@ -117,13 +122,53 @@ export function WorkspaceProvider({ children }) {
     }
   }, [workspaces]);
 
+  // Proactively fetch a single store workspace when not present in global list
+  const resolveStoreWorkspace = useCallback(async (storeId) => {
+    if (!storeId || !isAuthenticated) return null;
+    try {
+      const res = await apiGet(`/store/${storeId}`);
+      const storeObj = res?.data || res;
+      if (!storeObj || (!storeObj._id && !storeObj.id)) return null;
+
+      const userCtx = storeObj?.userContext || {};
+      const isOwner = userCtx.role === 'Owner' || !userCtx.role;
+      const ws = {
+        storeId: String(storeObj._id || storeObj.id),
+        storeName: storeObj.name,
+        businessType: storeObj.businessType,
+        membershipType: isOwner ? 'owner' : 'employee',
+        role: userCtx.role || (isOwner ? 'Owner' : 'Employee'),
+        isOwner: isOwner,
+        permissions: isOwner ? ['*'] : (userCtx.permissions || []),
+        status: 'active',
+      };
+
+      setWorkspaces((prev) => {
+        const filtered = prev.filter((w) => String(w.storeId) !== String(ws.storeId));
+        return [...filtered, ws];
+      });
+      setSelectedStoreId(ws.storeId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(WORKSPACE_STORAGE_KEY, ws.storeId);
+      }
+      return ws;
+    } catch (err) {
+      console.warn(`[WORKSPACE_CONTEXT] Failed to resolve single store ${storeId}:`, err);
+      return null;
+    }
+  }, [isAuthenticated]);
+
   // Select a specific workspace
-  const selectWorkspace = useCallback((storeId) => {
+  const selectWorkspace = useCallback(async (storeId) => {
     if (!storeId) return;
 
-    const target = workspaces.find((w) => w.storeId === storeId);
+    const target = workspaces.find((w) => String(w.storeId) === String(storeId));
     if (!target) {
-      console.warn(`[WORKSPACE_CONTEXT] Attempted to select inaccessible storeId: ${storeId}`);
+      // Try resolving directly from backend store lookup
+      const resolved = await resolveStoreWorkspace(storeId);
+      if (!resolved) {
+        console.warn(`[WORKSPACE_CONTEXT] Attempted to select inaccessible storeId: ${storeId}`);
+      }
       return;
     }
 
@@ -134,7 +179,7 @@ export function WorkspaceProvider({ children }) {
 
     // Invalidate/clear store-scoped queries so stale data does not leak
     queryClient.invalidateQueries();
-  }, [workspaces, queryClient]);
+  }, [workspaces, queryClient, resolveStoreWorkspace]);
 
   // Refresh workspaces and optionally verify current selection
   const refreshWorkspaces = useCallback(async () => {
@@ -168,6 +213,7 @@ export function WorkspaceProvider({ children }) {
       isLoading: authLoading || isLoading,
       error,
       selectWorkspace,
+      resolveStoreWorkspace,
       refreshWorkspaces,
       isStoreCreationEligible,
     }),
@@ -179,6 +225,7 @@ export function WorkspaceProvider({ children }) {
       isLoading,
       error,
       selectWorkspace,
+      resolveStoreWorkspace,
       refreshWorkspaces,
       isStoreCreationEligible,
     ]

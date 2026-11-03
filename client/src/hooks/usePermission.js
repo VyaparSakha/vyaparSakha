@@ -56,7 +56,10 @@ export const usePermission = (explicitPermissions, explicitIsOwner) => {
     if (!workspaceContext) return true;
     if (workspaceContext.isLoading) return true; // optimistic while loading
     if (!routeStoreId) return Boolean(currentWorkspace);
-    return Boolean(workspaceContext.workspaces?.some((w) => String(w.storeId) === String(routeStoreId)));
+    return Boolean(
+      (currentWorkspace && String(currentWorkspace.storeId) === String(routeStoreId)) ||
+      workspaceContext.workspaces?.some((w) => String(w.storeId) === String(routeStoreId))
+    );
   }, [explicitIsOwner, explicitPermissions, workspaceContext, routeStoreId, currentWorkspace]);
 
   // Determine effective ownership and permissions
