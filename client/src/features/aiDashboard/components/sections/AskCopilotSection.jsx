@@ -179,6 +179,7 @@ const AskCopilotSection = ({
   const [liveSpeechTranscript, setLiveSpeechTranscript] = useState("");
   const [speechSupported, setSpeechSupported] = useState(false);
   const [voiceAutoSpeak, setVoiceAutoSpeak] = useState(false);
+  const [voiceViewMode, setVoiceViewMode] = useState("voice"); // "voice" | "chat"
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const recognitionRef = useRef(null);
@@ -351,45 +352,53 @@ const AskCopilotSection = ({
 
     // Attach visuals and tool call metadata to current voice assistant message
     setMessages((prev) => {
-      const targetId = liveAiMsgIdRef.current;
-      let matched = false;
-      const updated = prev.map((m) => {
-        if (m.id === targetId || (!targetId && m.role === "assistant")) {
-          matched = true;
-          const prevVisuals = Array.isArray(m.visuals) ? m.visuals : [];
-          const prevCalls = Array.isArray(m.meta?.tool_calls) ? m.meta.tool_calls : [];
-          return {
-            ...m,
-            visuals: specs.length > 0 ? [...prevVisuals, ...specs] : prevVisuals,
-            meta: {
-              ...(m.meta || {}),
-              tool_calls: [...prevCalls, toolCallObj],
-            },
-          };
-        }
-        return m;
-      });
+      let targetId = liveAiMsgIdRef.current;
 
-      if (!matched) {
-        const newAiId = `assistant-voice-${Date.now()}`;
-        liveAiMsgIdRef.current = newAiId;
-        return [
-          ...prev,
-          {
-            id: newAiId,
-            role: "assistant",
-            text: "",
-            timestamp: Date.now(),
-            streaming: true,
-            visuals: specs,
-            meta: {
-              tool_calls: [toolCallObj],
-            },
-            error: "",
-          },
-        ];
+      // If no active targetId yet, check if the very last message in the chat is an assistant turn
+      if (!targetId && prev.length > 0 && prev[prev.length - 1].role === "assistant") {
+        targetId = prev[prev.length - 1].id;
+        liveAiMsgIdRef.current = targetId;
       }
-      return updated;
+
+      if (targetId) {
+        let found = false;
+        const updated = prev.map((m) => {
+          if (m.id === targetId) {
+            found = true;
+            const prevVisuals = Array.isArray(m.visuals) ? m.visuals : [];
+            const prevCalls = Array.isArray(m.meta?.tool_calls) ? m.meta.tool_calls : [];
+            return {
+              ...m,
+              visuals: specs.length > 0 ? [...prevVisuals, ...specs] : prevVisuals,
+              meta: {
+                ...(m.meta || {}),
+                tool_calls: [...prevCalls, toolCallObj],
+              },
+            };
+          }
+          return m;
+        });
+        if (found) return updated;
+      }
+
+      // If no target assistant message exists at the bottom, create a new one
+      const newAiId = `assistant-voice-${Date.now()}`;
+      liveAiMsgIdRef.current = newAiId;
+      return [
+        ...prev,
+        {
+          id: newAiId,
+          role: "assistant",
+          text: "",
+          timestamp: Date.now(),
+          streaming: true,
+          visuals: specs,
+          meta: {
+            tool_calls: [toolCallObj],
+          },
+          error: "",
+        },
+      ];
     });
 
     // Emit refresh if the voice tool mutated backend data
@@ -455,6 +464,7 @@ const AskCopilotSection = ({
   const handleEndLiveCall = useCallback(() => {
     setIsLiveCallActive(false);
     isLiveCallActiveRef.current = false;
+    setVoiceViewMode("voice");
     disconnectVoiceWs();
 
     if (recognitionRef.current && isListening) {
@@ -1311,7 +1321,7 @@ const AskCopilotSection = ({
         {/* CONDITIONAL BODY: LIVE CALL CARTOON BOT (BLUE HEADER ONLY)         */}
         {/* VS STANDARD CHAT VIEW (WHITE HEADER + CHAT MESSAGES + INPUT BAR)   */}
         {/* ------------------------------------------------------------------ */}
-        {isLiveCallActive || isVoiceWsConnected ? (
+        {(isLiveCallActive || isVoiceWsConnected) && voiceViewMode === "voice" ? (
           /* FULL SCREEN INTERACTIVE CARTOON TALKING BOT WITH ITS OWN BLUE HEADER */
           <div className="flex-1 min-h-0 flex flex-col">
             <CartoonVoiceBotView
@@ -1335,6 +1345,7 @@ const AskCopilotSection = ({
               onCopy={handleCopy}
               voiceAutoSpeak={voiceAutoSpeak}
               onToggleVoiceAutoSpeak={() => setVoiceAutoSpeak((prev) => !prev)}
+              onSwitchToChat={() => setVoiceViewMode("chat")}
               onQuickPrompt={(promptText) => {
                 handleEndLiveCall();
                 setTimeout(() => askCopilot(promptText), 200);
@@ -1352,6 +1363,74 @@ const AskCopilotSection = ({
                 onClose={onClose}
                 storeId={storeId}
               />
+            )}
+
+            {/* LIVE VOICE CALL FLOATING DOCK BAR: Visible when voice call is active in Chat Mode */}
+            {Boolean(isLiveCallActive || isVoiceWsConnected) && (
+              <div className="mx-4 sm:mx-6 mt-3 mb-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 flex items-center justify-between gap-3 animate-fadeIn shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative flex items-center justify-center shrink-0">
+                    <span className="h-3 w-3 rounded-full bg-emerald-400 animate-ping absolute" />
+                    <span className="h-3 w-3 rounded-full bg-emerald-400 relative" />
+                  </div>
+                  <div className="min-w-0 flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold tracking-wide uppercase text-blue-100">
+                        Live Voice Active
+                      </span>
+                      {isSpeaking && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/20 text-white font-medium animate-pulse">
+                          Speaking...
+                        </span>
+                      )}
+                      {isVoiceWsRecording && !isVoiceWsMuted && !isSpeaking && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-400/30 text-emerald-100 font-medium">
+                          Listening...
+                        </span>
+                      )}
+                    </div>
+                    {liveSpeechTranscript ? (
+                      <p className="text-xs text-blue-100 truncate italic">
+                        "{liveSpeechTranscript}"
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-blue-200 truncate">
+                        Speak naturally — visuals & answers appear below in real-time
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setVoiceViewMode("voice")}
+                    className="px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-medium transition flex items-center gap-1 shadow-xs"
+                    title="Switch to 3D Avatar Bot view"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                    <span className="hidden sm:inline">Avatar View</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={toggleVoiceWsMute}
+                    className="p-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white transition"
+                    title={isVoiceWsMuted ? "Unmute Microphone" : "Mute Microphone"}
+                  >
+                    {isVoiceWsMuted ? <MicOff className="h-4 w-4 text-rose-300" /> : <Mic className="h-4 w-4" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleEndLiveCall}
+                    className="p-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white transition shadow-xs"
+                    title="End Voice Call"
+                  >
+                    <PhoneOff className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             )}
 
 

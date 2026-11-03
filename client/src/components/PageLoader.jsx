@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Lottie } from 'lottie-react';
 import loaderAnimation from '@/assets/animations/vyparaSakhaLoading/VyaparSakhaOrbitLoader.json';
 import cardAnimation from '@/assets/animations/vyparaSakhaLoading/VyaparSakhaLoaderCard.json';
+// import workSpaceAnimation from '@/assets/animations/workspace/workspaceLoadingAnimation.lottie';
 
 /**
  * PageLoader

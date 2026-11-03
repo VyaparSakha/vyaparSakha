@@ -21,7 +21,7 @@ export function clearSessionId() {
   localStorage.removeItem(SESSION_STORAGE_KEY);
 }
 
-// Chat ID management (new — preferred over session_id)
+// Chat ID management (preferred over session_id)
 const CHAT_STORAGE_KEY = 'copilot_chat_id';
 
 export function getChatId() {
@@ -39,6 +39,23 @@ export function setChatId(chatId) {
 export function clearChatId() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(CHAT_STORAGE_KEY);
+}
+
+// Active store ID storage key
+export const WORKSPACE_STORAGE_KEY = 'vyapar_active_store_id';
+
+export function getActiveStoreId() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(WORKSPACE_STORAGE_KEY);
+}
+
+export function setActiveStoreId(storeId) {
+  if (typeof window === 'undefined') return;
+  if (storeId) {
+    localStorage.setItem(WORKSPACE_STORAGE_KEY, storeId);
+  } else {
+    localStorage.removeItem(WORKSPACE_STORAGE_KEY);
+  }
 }
 
 // Create axios instance with default config
@@ -59,6 +76,12 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Attach active store ID if available and not already specified
+    const activeStoreId = getActiveStoreId();
+    if (activeStoreId && !config.headers['x-store-id']) {
+      config.headers['x-store-id'] = activeStoreId;
+    }
+
     // Attach session ID if available
     const sessionId = getSessionId();
     if (sessionId) {
@@ -72,7 +95,7 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor with Silent Token Refresh & Automatic Retry
+// Response interceptor with Silent Token Refresh & Workspace Revocation Handling
 api.interceptors.response.use(
   (response) => {
     // Capture session ID from response headers
@@ -112,15 +135,43 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     } else if (error.response?.status === 403) {
-      // Handle forbidden - user not registered in database
       const message = error.response?.data?.message || 'Access forbidden';
+
+      // 1. Unregistered user scenario
       if (message.includes('not registered') || message.includes('complete registration')) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('authToken');
           window.location.href = '/signUp';
         }
       }
+      // 2. Multi-tenant access revocation scenario (store suspended, role removed, or membership revoked)
+      else if (
+        message.includes('permission to access this store') ||
+        message.includes('suspended') ||
+        message.includes('Role belongs to another store') ||
+        message.includes('Only the store owner can perform this action')
+      ) {
+        console.warn('[API INTERCEPTOR] Store-level access rejected (403):', message);
+
+        if (typeof window !== 'undefined') {
+          // Clear active store ID from local storage
+          localStorage.removeItem(WORKSPACE_STORAGE_KEY);
+
+          // Dispatch event for UI notification and reactive workspace list refresh
+          window.dispatchEvent(
+            new CustomEvent('vyapar:workspace_revoked', {
+              detail: { message },
+            })
+          );
+
+          // If currently inside an affected store dashboard page, redirect back to workspace selector
+          if (window.location.pathname.startsWith('/storeDashboard/')) {
+            window.location.href = '/storeDashboard?revoked=true';
+          }
+        }
+      }
     }
+
     return Promise.reject(error.response?.data || error.message);
   }
 );

@@ -25,7 +25,23 @@ export const updateEmployee = async (storeId, employeeId, data) => {
 };
 
 /**
- * Remove an employee from the store
+ * Suspend an employee
+ */
+export const suspendEmployee = async (storeId, employeeId) => {
+  const response = await apiPost(`/store/${storeId}/employees/${employeeId}/suspend`);
+  return response;
+};
+
+/**
+ * Reactivate a suspended employee
+ */
+export const reactivateEmployee = async (storeId, employeeId) => {
+  const response = await apiPost(`/store/${storeId}/employees/${employeeId}/reactivate`);
+  return response;
+};
+
+/**
+ * Remove an employee from the store (membership only, preserves global User)
  */
 export const removeEmployee = async (storeId, employeeId) => {
   const response = await apiDelete(`/store/${storeId}/employees/${employeeId}`);

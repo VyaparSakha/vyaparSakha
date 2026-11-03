@@ -8,6 +8,8 @@ import { ArrowLeft, X, ChevronDown } from "lucide-react";
 import { useStorePageContext } from "@/features/store/context/storePageContext";
 import { useInventoryContext } from "@/features/inventory/context/inventoryContext";
 import { useTranslation } from "@/i18n/LanguageContext";
+import { usePermission } from "@/hooks/usePermission";
+import { useWorkspaceContext } from "@/context/WorkspaceContext";
 
 const icons = {
   Inventory: (
@@ -327,6 +329,7 @@ export default function StoreSidebarDrawer() {
   const { currentStore } = useInventoryContext();
   const [showFullName, setShowFullName] = useState(false);
   const { t } = useTranslation();
+  const { hasPermission, isOwner, currentRole, currentWorkspace } = usePermission();
 
   const isPurchaseRoute = Boolean(pathname?.includes("/purchases"));
   const [isPurchasesOpen, setIsPurchasesOpen] = useState(isPurchaseRoute);
@@ -394,64 +397,78 @@ export default function StoreSidebarDrawer() {
   };
 
   const navItems = useMemo(
-    () => [
-      {
-        label: t("navigation.overview"),
-        href: `/storeDashboard/${storeId}`,
-        key: "overview",
-      },
-      {
-        label: t("navigation.inventory"),
-        href: `/storeDashboard/${storeId}/inventory`,
-        key: "inventory",
-      },
-      {
-        label: t("navigation.billing"),
-        href: `/storeDashboard/${storeId}/billing`,
-        key: "billing",
-      },
-      {
-        label: t("navigation.billingHistory"),
-        href: `/storeDashboard/${storeId}/billing-history`,
-        key: "billing-history",
-      },
-      {
-        label: t("navigation.staff"),
-        href: `/storeDashboard/${storeId}/staff`,
-        key: "staff",
-      },
-      {
-        label: t("navigation.purchases"),
-        href: `/storeDashboard/${storeId}/purchases`,
-        key: "purchases",
-      },
-      {
-        label: t("navigation.sellers"),
-        href: `/storeDashboard/${storeId}/sellers`,
-        key: "sellers",
-      },
-      {
-        label: t("navigation.buyers"),
-        href: `/storeDashboard/${storeId}/buyers`,
-        key: "buyers",
-      },
-      {
-        label: t("navigation.analytics"),
-        href: `/storeDashboard/${storeId}/analytics`,
-        key: "analytics",
-      },
-      {
-        label: t("navigation.aiCopilot"),
-        href: `/storeDashboard/${storeId}/ai-dashboard`,
-        key: "ai-dashboard",
-      },
-      {
-        label: t("navigation.automations"),
-        href: `/storeDashboard/${storeId}/automations`,
-        key: "automations",
-      },
-    ],
-    [storeId, t]
+    () => {
+      const all = [
+        {
+          label: t("navigation.overview"),
+          href: `/storeDashboard/${storeId}`,
+          key: "overview",
+          visible: true,
+        },
+        {
+          label: t("navigation.inventory"),
+          href: `/storeDashboard/${storeId}/inventory`,
+          key: "inventory",
+          visible: isOwner || hasPermission("inventory:add") || hasPermission("inventory:manage"),
+        },
+        {
+          label: t("navigation.billing"),
+          href: `/storeDashboard/${storeId}/billing`,
+          key: "billing",
+          visible: isOwner || hasPermission("billing:create"),
+        },
+        {
+          label: t("navigation.billingHistory"),
+          href: `/storeDashboard/${storeId}/billing-history`,
+          key: "billing-history",
+          visible: isOwner || hasPermission("billing:create"),
+        },
+        {
+          label: t("navigation.staff"),
+          href: `/storeDashboard/${storeId}/staff`,
+          key: "staff",
+          visible: isOwner,
+        },
+        {
+          label: t("navigation.purchases"),
+          href: `/storeDashboard/${storeId}/purchases`,
+          key: "purchases",
+          visible: isOwner || hasPermission("inventory:add") || hasPermission("inventory:manage"),
+        },
+        {
+          label: t("navigation.sellers"),
+          href: `/storeDashboard/${storeId}/sellers`,
+          key: "sellers",
+          visible: isOwner || hasPermission("inventory:add") || hasPermission("inventory:manage"),
+        },
+        {
+          label: t("navigation.buyers"),
+          href: `/storeDashboard/${storeId}/buyers`,
+          key: "buyers",
+          visible: isOwner || hasPermission("billing:create"),
+        },
+        {
+          label: t("navigation.analytics"),
+          href: `/storeDashboard/${storeId}/analytics`,
+          key: "analytics",
+          visible: isOwner || hasPermission("reports:view_sales"),
+        },
+        {
+          label: t("navigation.aiCopilot"),
+          href: `/storeDashboard/${storeId}/ai-dashboard`,
+          key: "ai-dashboard",
+          visible: isOwner || hasPermission("reports:view_sales") || hasPermission("inventory:manage"),
+        },
+        {
+          label: t("navigation.automations"),
+          href: `/storeDashboard/${storeId}/automations`,
+          key: "automations",
+          visible: isOwner,
+        },
+      ];
+      return all.filter((item) => item.visible);
+    },
+    [storeId, t, isOwner, hasPermission]
   );
 
   const getActiveNav = () => {
@@ -584,7 +601,7 @@ export default function StoreSidebarDrawer() {
           </button>
         </div>
 
-        {/* Store Logo & Name */}
+        {/* Store Logo & Name with Role Badge & Switch */}
         <div
           style={{
             display: "flex",
@@ -596,41 +613,71 @@ export default function StoreSidebarDrawer() {
         >
           <div
             style={{
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               borderRadius: 10,
-              background: "#263d5e",
+              background: isOwner ? "#064e3b" : "#1e3a8a",
+              border: isOwner ? "1px solid #059669" : "1px solid #3b82f6",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 13,
               fontWeight: 700,
-              color: "#7eb3ff",
+              color: isOwner ? "#6ee7b7" : "#93c5fd",
               fontFamily: "'Segoe UI', sans-serif",
               flexShrink: 0,
             }}
           >
-            {getStoreInitials(currentStore?.name)}
+            {getStoreInitials(currentWorkspace?.storeName || currentStore?.name)}
           </div>
-          <span
-            style={{
-              fontFamily: "'Segoe UI', sans-serif",
-              fontSize: 15,
-              fontWeight: 700,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: showFullName ? "normal" : "nowrap",
-              maxWidth: showFullName ? "100%" : 180,
-              cursor: "pointer",
-              wordBreak: "break-word",
-            }}
-            onClick={() => setShowFullName(!showFullName)}
-            title={currentStore?.name || "VyaparSakha"}
-          >
-            <span style={{ color: "#fff" }}>
-              {currentStore?.name || "VyaparSakha"}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span
+              style={{
+                fontFamily: "'Segoe UI', sans-serif",
+                fontSize: 14.5,
+                fontWeight: 700,
+                color: "#fff",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                display: "block",
+              }}
+              title={currentWorkspace?.storeName || currentStore?.name || "VyaparSakha"}
+            >
+              {currentWorkspace?.storeName || currentStore?.name || "VyaparSakha"}
             </span>
-          </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: "1px 6px",
+                  borderRadius: 4,
+                  background: isOwner ? "rgba(16, 185, 129, 0.2)" : "rgba(59, 130, 246, 0.2)",
+                  color: isOwner ? "#6ee7b7" : "#93c5fd",
+                  border: isOwner ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(59, 130, 246, 0.3)",
+                }}
+              >
+                {isOwner ? "👑 Owner" : `🛡️ ${currentRole || "Employee"}`}
+              </span>
+              <button
+                onClick={handleBackClick}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#94a3b8",
+                  fontSize: 10.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  padding: 0,
+                }}
+                title="Switch store workspace"
+              >
+                Switch
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Navigation list */}
@@ -673,7 +720,8 @@ export default function StoreSidebarDrawer() {
 
           <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 8px 6px 8px" }}></div>
 
-          {/* Management Section */}
+          {/* Management Section (Visible only if user has at least one permitted item) */}
+          {navItems.some((i) => ["purchases", "sellers", "buyers", "staff", "analytics"].includes(i.key)) && (
           <div style={{ padding: "0 4px", marginBottom: 6 }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>
               MANAGEMENT
@@ -795,10 +843,12 @@ export default function StoreSidebarDrawer() {
                 );
               })}
           </div>
+          )}
 
           <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 8px 6px 8px" }}></div>
 
-          {/* Intelligence Section */}
+          {/* Intelligence Section (Visible only if user has access) */}
+          {navItems.some((i) => ["ai-dashboard", "automations"].includes(i.key)) && (
           <div style={{ padding: "0 4px", marginBottom: 6 }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: "#4e6580", letterSpacing: "1px", marginBottom: 4, paddingLeft: 8 }}>
               INTELLIGENCE
@@ -816,6 +866,7 @@ export default function StoreSidebarDrawer() {
                 />
               ))}
           </div>
+          )}
         </div>
 
         {/* Divider */}

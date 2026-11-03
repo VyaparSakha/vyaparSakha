@@ -42,3 +42,13 @@ jest.mock('next-intl', () => ({
   }),
 }));
 
+
+jest.mock('lottie-react', () => {
+  const React = require('react');
+  const MockLottie = (props) => React.createElement('div', { 'data-testid': 'mock-lottie', ...props });
+  return {
+    __esModule: true,
+    default: MockLottie,
+    Lottie: MockLottie,
+  };
+});

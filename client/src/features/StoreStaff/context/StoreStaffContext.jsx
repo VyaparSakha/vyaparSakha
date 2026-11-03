@@ -37,6 +37,18 @@ export const StoreStaffProvider = ({ storeId, children }) => {
     return res;
   }, [storeId, fetchEmployees]);
 
+  const suspendEmployee = useCallback(async (employeeId) => {
+    const res = await employeeService.suspendEmployee(storeId, employeeId);
+    await fetchEmployees();
+    return res;
+  }, [storeId, fetchEmployees]);
+
+  const reactivateEmployee = useCallback(async (employeeId) => {
+    const res = await employeeService.reactivateEmployee(storeId, employeeId);
+    await fetchEmployees();
+    return res;
+  }, [storeId, fetchEmployees]);
+
   const removeEmployee = useCallback(async (employeeId) => {
     const res = await employeeService.removeEmployee(storeId, employeeId);
     await fetchEmployees();
@@ -81,6 +93,8 @@ export const StoreStaffProvider = ({ storeId, children }) => {
     fetchEmployees,
     inviteEmployee,
     updateEmployee,
+    suspendEmployee,
+    reactivateEmployee,
     removeEmployee,
     // Role actions
     fetchRoles,
@@ -103,5 +117,3 @@ export const useStoreStaffContext = () => {
   }
   return context;
 };
-
-export default StoreStaffContext;

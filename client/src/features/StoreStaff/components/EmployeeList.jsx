@@ -12,20 +12,55 @@ const STATUS_BADGE = {
 };
 
 const EmployeeList = ({ onInvite }) => {
-  const { employees, fetchEmployees, removeEmployee, loading } = useStoreStaffContext();
+  const {
+    employees,
+    fetchEmployees,
+    removeEmployee,
+    suspendEmployee,
+    reactivateEmployee,
+    loading,
+  } = useStoreStaffContext();
+
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
-  useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
 
   const handleEdit = (emp) => {
     setEditingEmployee(emp);
     setIsEditModalOpen(true);
   };
 
+  const handleToggleStatus = async (emp) => {
+    try {
+      setActionLoadingId(emp._id);
+      if (emp.status === 'suspended') {
+        if (!confirm(`Reactivate ${emp.user?.name || 'this employee'}?`)) return;
+        await reactivateEmployee(emp._id);
+      } else {
+        if (!confirm(`Suspend ${emp.user?.name || 'this employee'}? They will immediately lose access to this store.`)) return;
+        await suspendEmployee(emp._id);
+      }
+    } catch (err) {
+      alert(err?.message || 'Failed to update employee status');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleRemove = async (employeeId, name) => {
-    if (!confirm(`Remove ${name} from this store?`)) return;
-    await removeEmployee(employeeId);
+    if (!confirm(`Remove ${name || 'this employee'} from this store? Their global account will remain intact.`)) return;
+    try {
+      setActionLoadingId(employeeId);
+      await removeEmployee(employeeId);
+    } catch (err) {
+      alert(err?.message || 'Failed to remove employee');
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   return (
@@ -57,7 +92,7 @@ const EmployeeList = ({ onInvite }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#f9fafb' }}>
-              {['Employee', 'Role', 'Status', 'Joined', 'Actions'].map(h => (
+              {['Employee', 'Role', 'Status', 'Joined', 'Actions'].map((h) => (
                 <th key={h} style={{ padding: '12px 24px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>{h}</th>
               ))}
             </tr>
@@ -65,6 +100,7 @@ const EmployeeList = ({ onInvite }) => {
           <tbody>
             {employees.map((emp) => {
               const badge = STATUS_BADGE[emp.status] || STATUS_BADGE.pending;
+              const isActioning = actionLoadingId === emp._id;
               return (
                 <tr key={emp._id} style={{ borderTop: '1px solid #f1f1f1' }}>
                   {/* Employee Info */}
@@ -97,16 +133,38 @@ const EmployeeList = ({ onInvite }) => {
                   </td>
                   {/* Actions */}
                   <td style={{ padding: '16px 24px' }}>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <button
                         onClick={() => handleEdit(emp)}
-                        style={{ padding: '6px 14px', background: '#eef2ff', color: '#4f46e5', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                        disabled={isActioning}
+                        style={{ padding: '6px 12px', background: '#eef2ff', color: '#4f46e5', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                       >
                         Edit Role
                       </button>
+
+                      {emp.status !== 'pending' && (
+                        <button
+                          onClick={() => handleToggleStatus(emp)}
+                          disabled={isActioning}
+                          style={{
+                            padding: '6px 12px',
+                            background: emp.status === 'suspended' ? '#f0fdf4' : '#fffbeb',
+                            color: emp.status === 'suspended' ? '#15803d' : '#b45309',
+                            border: emp.status === 'suspended' ? '1px solid #bbf7d0' : '1px solid #fde68a',
+                            borderRadius: 8,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {emp.status === 'suspended' ? 'Reactivate' : 'Suspend'}
+                        </button>
+                      )}
+
                       <button
                         onClick={() => handleRemove(emp._id, emp.user?.name)}
-                        style={{ padding: '6px 14px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                        disabled={isActioning}
+                        style={{ padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                       >
                         Remove
                       </button>

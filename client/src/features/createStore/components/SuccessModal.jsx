@@ -20,6 +20,9 @@ const CreationFlowModal = ({
 
   const handleEnterStore = () => {
     if (storeId) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vyapar_active_store_id', storeId);
+      }
       router.push(`/storeDashboard/${storeId}`);
     } else {
       router.push('/dashboard');

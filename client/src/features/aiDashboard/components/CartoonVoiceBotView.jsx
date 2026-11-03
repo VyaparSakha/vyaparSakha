@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import WaveRibbonAnimation from "./WaveRibbonAnimation";
 import dynamic from "next/dynamic";
-import { buildVisualsFromToolCalls } from "@/lib/visuals/fromToolCalls";
+import { buildVisualsFromToolCalls, buildVisualsFromMessageText } from "@/lib/visuals/fromToolCalls";
 
 const VisualRenderer = dynamic(
   () => import("@/features/visuals/components/VisualRenderer"),
@@ -24,6 +24,7 @@ import {
   Volume2,
   Loader2,
   Share2,
+  MessageSquare,
 } from "lucide-react";
 
 export default function CartoonVoiceBotView({
@@ -46,6 +47,7 @@ export default function CartoonVoiceBotView({
   onClose,
   onFeedback,
   onCopy,
+  onSwitchToChat,
 }) {
   const [callDuration, setCallDuration] = useState(0);
   const [inputText, setInputText] = useState("");
@@ -283,6 +285,19 @@ export default function CartoonVoiceBotView({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Switch to Chat View button */}
+          {onSwitchToChat && (
+            <button
+              type="button"
+              onClick={onSwitchToChat}
+              className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition flex items-center gap-1.5 text-xs font-medium border border-slate-200/80 shadow-xs"
+              title="Show live chat timeline and interactive graphs"
+            >
+              <MessageSquare className="h-3.5 w-3.5 text-blue-600" />
+              <span className="hidden sm:inline">View Chat & Visuals</span>
+            </button>
+          )}
+
           {/* Share / Copy Transcript */}
           <button
             type="button"
@@ -389,7 +404,7 @@ export default function CartoonVoiceBotView({
                 ? msg.visuals
                 : Array.isArray(msg.meta?.tool_calls) && msg.meta.tool_calls.length > 0
                 ? buildVisualsFromToolCalls(msg.meta.tool_calls)
-                : [];
+                : buildVisualsFromMessageText(msg.text || "");
 
             return (
               <div
