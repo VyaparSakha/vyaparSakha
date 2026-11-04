@@ -290,6 +290,28 @@ export function buildVisualsFromToolCalls(toolCalls) {
         continue;
       }
     }
+
+    // 6. Document Generation -> Document Preview
+    const isDocGen =
+      name.includes('document_generation') ||
+      rawStr.includes('invoke_document_generation') ||
+      (data && data.file && (data.file.download_url || data.file.filename));
+
+    if (isDocGen && data) {
+      const file = data.file || {};
+      const docType = data.document_type || file.document_type || 'excel';
+      visuals.push({
+        type: 'document_preview',
+        documentType: docType,
+        filename: file.filename || `report.${docType === 'excel' ? 'xlsx' : 'docx'}`,
+        fileId: file.file_id || '',
+        fileSize: file.size || 0,
+        downloadUrl: file.download_url || null,
+        storageKey: file.storage_key || '',
+        preview: data.preview || file.preview || {},
+      });
+      continue;
+    }
   }
 
   return visuals;

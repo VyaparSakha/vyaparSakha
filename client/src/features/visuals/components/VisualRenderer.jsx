@@ -20,6 +20,7 @@ const LineChartView = dynamic(() => import('./LineChartView'), { ssr: false });
 const AreaChartView = dynamic(() => import('./AreaChartView'), { ssr: false });
 const PieChartView = dynamic(() => import('./PieChartView'), { ssr: false });
 const DataTableView = dynamic(() => import('./DataTableView'), { ssr: false });
+const DocumentPreviewCard = dynamic(() => import('./DocumentPreviewCard'), { ssr: false });
 
 function renderSpec(spec) {
   switch (spec.type) {
@@ -35,6 +36,8 @@ function renderSpec(spec) {
       return <PieChartView spec={spec} />;
     case 'table':
       return <DataTableView spec={spec} />;
+    case 'document_preview':
+      return <DocumentPreviewCard spec={spec} />;
     default:
       return <VisualErrorFallback errors={`Unknown visual type: ${spec?.type}`} />;
   }

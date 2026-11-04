@@ -85,6 +85,21 @@ export const KpiCardsSpecSchema = z.object({
 });
 
 // ─────────────────────────────────────────────────────────
+// Document Preview (Excel / Word)
+// ─────────────────────────────────────────────────────────
+export const DocumentPreviewSpecSchema = z.object({
+  type: z.literal('document_preview'),
+  documentType: z.enum(['excel', 'word']).default('excel'),
+  filename: z.string(),
+  fileId: z.string().optional().default(''),
+  fileSize: z.number().optional().default(0),
+  downloadUrl: z.string().nullable().optional(),
+  storageKey: z.string().optional().default(''),
+  preview: z.record(z.unknown()).optional().default({}),
+  description: z.string().optional(),
+});
+
+// ─────────────────────────────────────────────────────────
 // Discriminated union — the main VisualSpec type
 // ─────────────────────────────────────────────────────────
 export const VisualSpecSchema = z.discriminatedUnion('type', [
@@ -94,6 +109,7 @@ export const VisualSpecSchema = z.discriminatedUnion('type', [
   PieChartSpecSchema,
   TableSpecSchema,
   KpiCardsSpecSchema,
+  DocumentPreviewSpecSchema,
 ]);
 
 // ─────────────────────────────────────────────────────────
