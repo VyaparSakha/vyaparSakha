@@ -64,8 +64,10 @@ const getSingleExpiryMeta = (expDate) => {
 };
 
 const getProductExpiryMeta = (item) => {
-  const activeBatches = (item.batches || []).filter((b) => !b.isArchived);
-  const batchList = activeBatches.length > 0 ? activeBatches : (item.batches || []);
+  const activeBatches = (item.batches || []).filter(
+    (b) => !b.isArchived && Number(b.quantity || 0) > 0,
+  );
+  const batchList = activeBatches;
 
   let listWithMeta = [];
   if (batchList.length > 0) {
@@ -301,8 +303,10 @@ const InventoryTable = ({
               const isExpiryDropdownOpen = openExpiryDropdownId === (item._id || item.id);
               const isPriceDropdownOpen = openPriceDropdownId === (item._id || item.id);
 
-              const activeBatches = (item.batches || []).filter((b) => !b.isArchived);
-              const batchList = activeBatches.length > 0 ? activeBatches : (item.batches || []);
+              const activeBatches = (item.batches || []).filter(
+                (b) => !b.isArchived && Number(b.quantity || 0) > 0,
+              );
+              const batchList = activeBatches;
               const priceBatches = batchList.length > 0 ? batchList : [
                 {
                   _id: item._id || "single",

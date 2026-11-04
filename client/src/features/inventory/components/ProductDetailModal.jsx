@@ -405,35 +405,41 @@ const ProductDetailModal = ({
           </div>
 
           {/* Batches Section */}
-          {product.batches && product.batches.length > 0 && (
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-600" />
-                  Product Batches ({product.batches.length})
-                </span>
-              </div>
-              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                {product.batches.map((b) => (
-                  <div
-                    key={b._id}
-                    className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-200 text-xs shadow-2xs"
-                  >
-                    <div>
-                      <p className="font-mono font-bold text-slate-800">{b.batchNumber}</p>
-                      <p className="text-[10px] text-slate-500">
-                        Exp: {b.expiryDate ? new Date(b.expiryDate).toLocaleDateString() : "No Expiry"}
-                      </p>
+          {(() => {
+            const activeBatches = (product.batches || []).filter(
+              (b) => !b.isArchived && Number(b.quantity || 0) > 0,
+            );
+            if (activeBatches.length === 0) return null;
+            return (
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-600" />
+                    Product Batches ({activeBatches.length})
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                  {activeBatches.map((b) => (
+                    <div
+                      key={b._id}
+                      className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-200 text-xs shadow-2xs"
+                    >
+                      <div>
+                        <p className="font-mono font-bold text-slate-800">{b.batchNumber}</p>
+                        <p className="text-[10px] text-slate-500">
+                          Exp: {b.expiryDate ? new Date(b.expiryDate).toLocaleDateString() : "No Expiry"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-slate-900">{b.quantity} {product.unit || "pcs"}</p>
+                        <p className="text-[10px] text-slate-500">₹{Number(b.sellingPrice || 0).toFixed(2)}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-slate-900">{b.quantity} {product.unit || "pcs"}</p>
-                      <p className="text-[10px] text-slate-500">₹{Number(b.sellingPrice || 0).toFixed(2)}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Footer Actions */}
           <div className="mt-6 flex items-center gap-3">

@@ -51,7 +51,9 @@ const ExistingProductModal = ({
   useEffect(() => {
     if (!isOpen || !product?._id) return;
 
-    const initial = Array.isArray(initialBatches) ? initialBatches : [];
+    const initial = (Array.isArray(initialBatches) ? initialBatches : []).filter(
+      (b) => !b.isArchived && Number(b.quantity || 0) > 0,
+    );
     setBatches(initial);
     if (initial.length > 0) {
       setSelectedBatchId(initial[0]._id);
@@ -78,8 +80,14 @@ const ExistingProductModal = ({
     try {
       setLoadingBatches(true);
       const effectiveStore = cleanStoreId(storeId || product?.store);
-      const data = await getProductBatches(product._id, effectiveStore, true);
-      const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      const data = await getProductBatches(product._id, effectiveStore, false);
+      const list = (
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : []
+      ).filter((b) => !b.isArchived && Number(b.quantity || 0) > 0);
       setBatches(list);
       if (list.length > 0) {
         const firstActive = list.find((b) => !b.isArchived) || list[0];
@@ -470,7 +478,6 @@ const ExistingProductModal = ({
                             {b.expiryDate
                               ? ` (Exp: ${new Date(b.expiryDate).toLocaleDateString()})`
                               : ""}
-                            {b.isArchived ? " [Archived]" : ""}
                           </option>
                         ))
                       )}

@@ -64,20 +64,20 @@ const BillingContent = () => {
           </div>
         )}
 
-        {/* Upper Row: Left Input Box (7 cols) & Right Search Box (5 cols) matching lower layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-          <div className="lg:col-span-7 flex flex-col">
+        {/* Upper Row: Left Input Box (7 cols) & Right Search Box (5 cols) with high z-index for dropdown overlays */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch relative z-30">
+          <div className="lg:col-span-7 flex flex-col relative z-30">
             <BarcodeInput />
           </div>
           {!isMobile && (
-            <div className="lg:col-span-5 flex flex-col">
+            <div className="lg:col-span-5 flex flex-col relative z-30">
               <ManualProductModal inline />
             </div>
           )}
         </div>
 
         {/* Lower Row: Left Billed Items (7 cols) & Right Payment Summary (5 cols) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch relative z-10">
           {/* Left Column (7 cols): Billed Items List */}
           {!isMobile && (
             <div className="lg:col-span-7 flex flex-col">

@@ -674,8 +674,10 @@ export const BillingProvider = ({ children }) => {
           }
         }
 
+        const cleanStoreId = typeof storeId === "object" ? storeId?._id : storeId;
+
         const billData = {
-          storeId,
+          storeId: cleanStoreId,
           buyerId,
           storeInfo: {
             name: currentStore?.name || currentStore?.storeName || "Vyapar Sakha Store",
@@ -735,7 +737,10 @@ export const BillingProvider = ({ children }) => {
             showSuccess("Bill generated and inventory updated successfully!");
           } catch (serverError) {
             console.error("Online bill generation failed:", serverError);
-            const errorMsg = serverError?.message || (typeof serverError === "string" ? serverError : null);
+            const errorMsg =
+              serverError?.response?.data?.message ||
+              serverError?.message ||
+              (typeof serverError === "string" ? serverError : null);
             
             // Check if this is a genuine network failure vs a business validation error (e.g., stock/permission)
             const isNetworkError = !isOnline() || 

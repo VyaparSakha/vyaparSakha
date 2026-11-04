@@ -121,9 +121,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
       }
 
       const activeBatchNumber =
+        product.batches?.find(b => !b.isArchived && Number(b.quantity || 0) > 0)?.batchNumber ||
         product.batchNumber ||
-        product.batches?.find(b => !b.isArchived)?.batchNumber ||
-        product.batches?.[0]?.batchNumber ||
         "";
 
       setFormData({
@@ -146,7 +145,7 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
         getProductBatches(prodId, storeId)
           .then((batches) => {
             if (batches && batches.length > 0) {
-              const active = batches.find((b) => !b.isArchived) || batches[0];
+              const active = (batches || []).find((b) => !b.isArchived && Number(b.quantity || 0) > 0);
               if (active?.batchNumber) {
                 setFormData((prev) => ({
                   ...prev,

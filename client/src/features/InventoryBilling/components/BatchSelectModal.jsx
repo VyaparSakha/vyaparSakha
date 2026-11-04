@@ -17,7 +17,7 @@ export const BatchSelectModal = () => {
   if (!mounted || !pendingBatchProduct) return null;
 
   const batches = Array.isArray(pendingBatchProduct.batches)
-    ? pendingBatchProduct.batches.filter((b) => !b.isArchived)
+    ? pendingBatchProduct.batches.filter((b) => !b.isArchived && Number(b.quantity || 0) > 0)
     : [];
 
   const handleSelectBatch = (batch) => {
