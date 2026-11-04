@@ -5,8 +5,12 @@ import ReactDOM from "react-dom";
 import {
   getProductBatches,
   getNextBatchNumber,
+  cleanStoreId,
+  addStockToBatch as addStockToBatchApi,
+  createBatch as createBatchApi,
 } from "../services/inventoryService";
 import { useInventoryContext } from "../context/inventoryContext";
+import { showSuccess, showError } from "@/utils/toast";
 
 const ExistingProductModal = ({
   isOpen,
@@ -16,7 +20,9 @@ const ExistingProductModal = ({
   storeId,
   onSuccess,
 }) => {
-  const { addStockToBatch, createBatch } = useInventoryContext();
+  const inventoryContext = useInventoryContext();
+  const addStockToBatch = inventoryContext?.addStockToBatch || addStockToBatchApi;
+  const createBatch = inventoryContext?.createBatch || createBatchApi;
   const [mounted, setMounted] = useState(false);
   const [batches, setBatches] = useState(initialBatches);
   const [loadingBatches, setLoadingBatches] = useState(false);
@@ -71,7 +77,7 @@ const ExistingProductModal = ({
     if (!product?._id) return [];
     try {
       setLoadingBatches(true);
-      const effectiveStore = (storeId && storeId !== "undefined" && storeId !== "null") ? storeId : product.store;
+      const effectiveStore = cleanStoreId(storeId || product?.store);
       const data = await getProductBatches(product._id, effectiveStore, true);
       const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
       setBatches(list);
@@ -107,19 +113,29 @@ const ExistingProductModal = ({
   // Submit Action 1: Add Stock to Existing Batch
   const handleAddStockSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedBatchId) return;
+    if (!selectedBatchId) {
+      showError("Please select a batch");
+      return;
+    }
     const qty = Number(additionalQty);
-    if (isNaN(qty) || qty <= 0) return;
+    if (isNaN(qty) || qty <= 0) {
+      showError("Please enter a valid positive quantity");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const effectiveStore = (storeId && storeId !== "undefined" && storeId !== "null") ? storeId : product.store;
+      const effectiveStore = cleanStoreId(storeId || product?.store);
       const res = await addStockToBatch(selectedBatchId, qty, effectiveStore);
-      if (res?.success) {
+      if (res?.success || res?._id || res?.data) {
         setAdditionalQty("");
         const updatedList = await fetchFreshBatches();
+        showSuccess(`Added ${qty} units to batch successfully!`);
         if (onSuccess) onSuccess(updatedList);
       }
+    } catch (err) {
+      console.error("Failed to add stock to batch:", err);
+      showError(err?.response?.data?.message || err?.message || "Failed to add stock to batch");
     } finally {
       setSubmitting(false);
     }
@@ -129,10 +145,14 @@ const ExistingProductModal = ({
   const handleNewBatchSubmit = async (e) => {
     e.preventDefault();
     if (!product?._id) return;
+    if (!newBatchData.batchNumber?.trim()) {
+      showError("Please enter a batch number");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const effectiveStore = (storeId && storeId !== "undefined" && storeId !== "null") ? storeId : product.store;
+      const effectiveStore = cleanStoreId(storeId || product?.store);
       const payload = {
         productId: product._id,
         storeId: effectiveStore,
@@ -145,7 +165,7 @@ const ExistingProductModal = ({
       };
 
       const res = await createBatch(payload);
-      if (res?.success) {
+      if (res?.success || res?._id || res?.data) {
         setNewBatchData({
           batchNumber: "",
           expiryDate: "",
@@ -155,9 +175,13 @@ const ExistingProductModal = ({
           sellingPrice: product.sellingPrice ? String(product.sellingPrice) : "",
         });
         const updatedList = await fetchFreshBatches();
+        showSuccess("Batch created successfully!");
         if (onSuccess) onSuccess(updatedList);
         setActiveTab("add_stock");
       }
+    } catch (err) {
+      console.error("Failed to create batch:", err);
+      showError(err?.response?.data?.message || err?.message || "Failed to create batch");
     } finally {
       setSubmitting(false);
     }
@@ -200,10 +224,10 @@ const ExistingProductModal = ({
             </div>
             <div>
               <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                Product Already Exists
+                Manage Batches & Stock
               </h2>
               <p className="text-xs text-slate-600 font-medium">
-                Barcode already registered. Manage batches or add stock below.
+                Add stock to an existing batch or create a new batch for this product.
               </p>
             </div>
           </div>

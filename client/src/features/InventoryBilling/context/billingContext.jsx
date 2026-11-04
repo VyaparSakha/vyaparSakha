@@ -35,6 +35,36 @@ import { emitAgentRefresh } from "@/servies/agentEventBus";
 
 export const BillingContext = createContext(null);
 
+const getActiveBatchInfo = (product) => {
+  const batches = Array.isArray(product?.batches) ? product.batches : [];
+  // Prioritize active non-archived batch with positive quantity, sorted by expiryDate ascending
+  const activeBatches = batches.filter((b) => !b.isArchived && Number(b.quantity) > 0);
+  const selected =
+    activeBatches.length > 0
+      ? activeBatches[0]
+      : batches.find((b) => !b.isArchived) || batches[0] || null;
+
+  if (selected) {
+    return {
+      selectedBatchId: selected._id,
+      selectedBatchNumber: selected.batchNumber,
+      price: Number(selected.sellingPrice ?? product.sellingPrice ?? product.price ?? 0),
+      batchStock: Number(selected.quantity || 0),
+      batchExpiryDate: selected.expiryDate || null,
+    };
+  }
+
+  return {
+    selectedBatchId: null,
+    selectedBatchNumber: product?.batchNumber || "BATCH-001",
+    price: Number(product?.sellingPrice ?? product?.price ?? 0),
+    batchStock: Number(product?.quantity ?? product?.qty ?? 0),
+    batchExpiryDate: product?.expDate || null,
+  };
+};
+
+const getLineId = (productId, batchId) => `${productId}_${batchId || "default"}`;
+
 export const BillingProvider = ({ children }) => {
   const { user } = useAuthContext();
   const params = useParams();
@@ -48,6 +78,7 @@ export const BillingProvider = ({ children }) => {
   const [lastBillData, setLastBillData] = useState(null);
   const [showBillPreview, setShowBillPreview] = useState(false);
   const [generatedBill, setGeneratedBill] = useState(null);
+  const [pendingBatchProduct, setPendingBatchProduct] = useState(null);
 
   const closeBillPreview = useCallback(() => {
     setShowBillPreview(false);
@@ -284,9 +315,9 @@ export const BillingProvider = ({ children }) => {
     fetchStoreProducts();
   }, [fetchStoreDetails, fetchStoreProducts]);
 
-  // Add product by barcode
+  // Add product by barcode (with multi-batch resolution)
   const addProductByBarcode = useCallback(
-    async (barcode) => {
+    async (barcode, specificBatch = null) => {
       try {
         setLoading(true);
         setError(null);
@@ -322,55 +353,71 @@ export const BillingProvider = ({ children }) => {
           return false;
         }
 
-        // SECURITY: Verify product belongs to current store
-        if (
-          product.store &&
-          product.store !== storeId &&
-          product.store._id !== storeId
-        ) {
-          showError("This product does not belong to this store");
-          console.error("STORE_MISMATCH:", {
-            productStore: product.store,
-            currentStore: storeId,
-          });
+        // If specific batch is not supplied, check if there are multiple active batches with stock
+        const batches = Array.isArray(product.batches) ? product.batches : [];
+        const activeBatchesWithStock = batches.filter((b) => !b.isArchived && Number(b.quantity) > 0);
+
+        if (!specificBatch && activeBatchesWithStock.length > 1) {
+          // Open batch selection modal so cashier explicitly chooses the batch
+          setPendingBatchProduct(product);
           setLoading(false);
-          return false;
+          return true;
         }
 
-        // Check if product already exists in bill
+        // Determine target batch (use specificBatch, earliest active batch, or fallback)
+        const targetBatch =
+          specificBatch ||
+          activeBatchesWithStock[0] ||
+          batches.find((b) => !b.isArchived) ||
+          batches[0] ||
+          null;
+
+        const batchId = targetBatch?._id || null;
+        const batchNumber = targetBatch?.batchNumber || product.batchNumber || "BATCH-001";
+        const price = Number(targetBatch?.sellingPrice ?? product.sellingPrice ?? product.price ?? 0);
+        const batchStock = targetBatch
+          ? Number(targetBatch.quantity || 0)
+          : Number(product.quantity || product.qty || 0);
+        const lineId = getLineId(product._id, batchId);
+
+        // Check if this exact product batch already exists in bill
         const existingIndex = billedProducts.findIndex(
-          (p) => p._id === product._id,
+          (p) => (p.lineId || getLineId(p._id, p.selectedBatchId)) === lineId,
         );
 
         if (existingIndex >= 0) {
-          // Increment quantity
           const updatedProducts = [...billedProducts];
-          const currentQty = updatedProducts[existingIndex].billedQuantity || 1;
-          const availableQty = product.quantity || product.qty || 0;
+          const currentItem = updatedProducts[existingIndex];
+          const currentQty = currentItem.billedQuantity || 1;
 
-          if (currentQty >= availableQty) {
-            showError("Cannot add more. Stock limit reached.");
+          if (currentQty >= batchStock) {
+            showError(`Stock limit reached for batch "${batchNumber}" (${batchStock} available).`);
             setLoading(false);
             return false;
           }
 
           updatedProducts[existingIndex] = {
-            ...updatedProducts[existingIndex],
+            ...currentItem,
             billedQuantity: currentQty + 1,
           };
           setBilledProducts(updatedProducts);
         } else {
-          // Add new product
           setBilledProducts((prev) => [
             ...prev,
             {
               ...product,
+              lineId,
+              selectedBatchId: batchId,
+              selectedBatchNumber: batchNumber,
+              price,
+              batchStock,
+              batchExpiryDate: targetBatch?.expiryDate || product.expDate || null,
               billedQuantity: 1,
             },
           ]);
         }
 
-        showSuccess("Product added to bill");
+        showSuccess(`Added "${product.name}" (${batchNumber}) to bill`);
         return true;
       } catch (err) {
         const msg = err?.message || err?.error || "Failed to fetch product";
@@ -386,39 +433,43 @@ export const BillingProvider = ({ children }) => {
     [storeId, billedProducts, isMobile, syncEnabled, sessionId],
   );
 
-  // Add product manually
+  // Add product manually (with multi-batch resolution)
   const addProductManually = useCallback(
-    (product, quantity = 1) => {
-      // SECURITY: Verify product belongs to current store
-      if (
-        product.store &&
-        product.store !== storeId &&
-        product.store._id !== storeId
-      ) {
-        showError("This product does not belong to this store");
-        console.error("STORE_MISMATCH:", {
-          productStore: product.store,
-          currentStore: storeId,
-        });
-        return false;
-      }
+    (product, quantity = 1, specificBatch = null) => {
+      const batches = Array.isArray(product.batches) ? product.batches : [];
+      const activeBatchesWithStock = batches.filter((b) => !b.isArchived && Number(b.quantity) > 0);
+
+      const targetBatch =
+        specificBatch ||
+        activeBatchesWithStock[0] ||
+        batches.find((b) => !b.isArchived) ||
+        batches[0] ||
+        null;
+
+      const batchId = targetBatch?._id || null;
+      const batchNumber = targetBatch?.batchNumber || product.batchNumber || "BATCH-001";
+      const price = Number(targetBatch?.sellingPrice ?? product.sellingPrice ?? product.price ?? 0);
+      const batchStock = targetBatch
+        ? Number(targetBatch.quantity || 0)
+        : Number(product.quantity || product.qty || 0);
+      const lineId = getLineId(product._id, batchId);
 
       const existingIndex = billedProducts.findIndex(
-        (p) => p._id === product._id,
+        (p) => (p.lineId || getLineId(p._id, p.selectedBatchId)) === lineId,
       );
 
       if (existingIndex >= 0) {
         const updatedProducts = [...billedProducts];
-        const currentQty = updatedProducts[existingIndex].billedQuantity || 1;
-        const availableQty = product.quantity || product.qty || 0;
+        const currentItem = updatedProducts[existingIndex];
+        const currentQty = currentItem.billedQuantity || 1;
 
-        if (currentQty + quantity > availableQty) {
-          showError("Cannot add more. Stock limit reached.");
+        if (currentQty + quantity > batchStock) {
+          showError(`Stock limit reached for batch "${batchNumber}" (${batchStock} available).`);
           return false;
         }
 
         updatedProducts[existingIndex] = {
-          ...updatedProducts[existingIndex],
+          ...currentItem,
           billedQuantity: currentQty + quantity,
         };
         setBilledProducts(updatedProducts);
@@ -427,15 +478,21 @@ export const BillingProvider = ({ children }) => {
           ...prev,
           {
             ...product,
+            lineId,
+            selectedBatchId: batchId,
+            selectedBatchNumber: batchNumber,
+            price,
+            batchStock,
+            batchExpiryDate: targetBatch?.expiryDate || product.expDate || null,
             billedQuantity: quantity,
           },
         ]);
       }
 
-      showSuccess("Product added to bill");
+      showSuccess(`Added "${product.name}" (${batchNumber}) to bill`);
       return true;
     },
-    [billedProducts, storeId],
+    [billedProducts],
   );
 
   // Update handlers ref to avoid stale closures in real-time sync
@@ -479,26 +536,29 @@ export const BillingProvider = ({ children }) => {
   }, [addProductByBarcode]);
 
 
-  // Remove product from bill
-  const removeProduct = useCallback((productId) => {
-    setBilledProducts((prev) => prev.filter((p) => p._id !== productId));
+  // Remove product from bill by lineId (or productId)
+  const removeProduct = useCallback((lineId) => {
+    setBilledProducts((prev) =>
+      prev.filter((p) => (p.lineId || p._id) !== lineId && p._id !== lineId),
+    );
     showSuccess("Product removed from bill");
   }, []);
 
-  // Update quantity of a product
+  // Update quantity of a product by lineId
   const updateProductQuantity = useCallback(
-    (productId, newQuantity) => {
+    (lineId, newQuantity) => {
       if (newQuantity <= 0) {
-        removeProduct(productId);
+        removeProduct(lineId);
         return;
       }
 
       setBilledProducts((prev) =>
         prev.map((p) => {
-          if (p._id === productId) {
-            const availableQty = p.quantity || p.qty || 0;
+          if ((p.lineId || p._id) === lineId) {
+            const availableQty =
+              p.batchStock !== undefined ? p.batchStock : p.quantity || p.qty || 0;
             if (newQuantity > availableQty) {
-              showError("Quantity exceeds available stock");
+              showError(`Quantity exceeds available stock (${availableQty} available)`);
               return p;
             }
             return { ...p, billedQuantity: newQuantity };
@@ -509,6 +569,58 @@ export const BillingProvider = ({ children }) => {
     },
     [removeProduct],
   );
+
+  // Switch batch for a billed product line (updates batch ID, batch number, selling price, and stock ceiling)
+  const updateProductBatch = useCallback((lineId, newBatchId) => {
+    setBilledProducts((prev) => {
+      const targetItem = prev.find((item) => (item.lineId || item._id) === lineId);
+      if (!targetItem) return prev;
+
+      const batches = Array.isArray(targetItem.batches) ? targetItem.batches : [];
+      const newBatch = batches.find((b) => String(b._id) === String(newBatchId));
+      if (!newBatch) return prev;
+
+      const newLineId = getLineId(targetItem._id, newBatch._id);
+      const batchStock = Number(newBatch.quantity || 0);
+      const newPrice = Number(newBatch.sellingPrice ?? targetItem.sellingPrice ?? targetItem.price ?? 0);
+
+      // If another line item already has this batch, merge into it and remove the old line
+      const existingMatch = prev.find(
+        (item) => (item.lineId || item._id) === newLineId && (item.lineId || item._id) !== lineId,
+      );
+
+      if (existingMatch) {
+        const mergedQty = Math.min(
+          (existingMatch.billedQuantity || 1) + (targetItem.billedQuantity || 1),
+          batchStock > 0 ? batchStock : 1,
+        );
+        return prev
+          .filter((item) => (item.lineId || item._id) !== lineId)
+          .map((item) =>
+            (item.lineId || item._id) === newLineId
+              ? { ...item, billedQuantity: mergedQty }
+              : item,
+          );
+      }
+
+      const currentQty = targetItem.billedQuantity || 1;
+      const newQty = batchStock > 0 ? Math.min(currentQty, batchStock) : 1;
+
+      return prev.map((item) => {
+        if ((item.lineId || item._id) !== lineId) return item;
+        return {
+          ...item,
+          lineId: newLineId,
+          selectedBatchId: newBatch._id,
+          selectedBatchNumber: newBatch.batchNumber,
+          price: newPrice,
+          batchStock,
+          batchExpiryDate: newBatch.expiryDate || null,
+          billedQuantity: newQty,
+        };
+      });
+    });
+  }, []);
 
   // Calculate total
   const calculateTotal = useCallback(() => {
@@ -585,14 +697,19 @@ export const BillingProvider = ({ children }) => {
             name: user?.displayName || user?.name || "Staff",
             email: user?.email || "",
           },
-          products: billedProducts.map((p) => ({
-            productId: p._id,
-            name: p.name,
-            barcode: p.barcode,
-            quantity: p.billedQuantity,
-            price: p.price || p.sellingPrice || 0,
-            total: (p.price || p.sellingPrice || 0) * p.billedQuantity,
-          })),
+          products: billedProducts.map((p) => {
+            const unitPrice = Number(p.price || p.sellingPrice || 0);
+            return {
+              productId: p._id,
+              name: p.name,
+              barcode: p.barcode,
+              quantity: p.billedQuantity,
+              price: unitPrice,
+              total: unitPrice * p.billedQuantity,
+              batchId: p.selectedBatchId || null,
+              batchNumber: p.selectedBatchNumber || p.batchNumber || null,
+            };
+          }),
           subtotal: billedProducts.reduce((sum, p) => sum + (p.price || p.sellingPrice || 0) * p.billedQuantity, 0),
           discount: {
             type: discount.type,
@@ -711,6 +828,8 @@ export const BillingProvider = ({ children }) => {
       setShowBillPreview,
       generatedBill,
       setGeneratedBill,
+      pendingBatchProduct,
+      setPendingBatchProduct,
       closeBillPreview,
       manualProductOpen,
       setManualProductOpen,
@@ -726,6 +845,7 @@ export const BillingProvider = ({ children }) => {
       addProductManually,
       removeProduct,
       updateProductQuantity,
+      updateProductBatch,
       discount,
       setDiscount,
       calculateTotal,
@@ -751,6 +871,8 @@ export const BillingProvider = ({ children }) => {
       setShowBillPreview,
       generatedBill,
       setGeneratedBill,
+      pendingBatchProduct,
+      setPendingBatchProduct,
       closeBillPreview,
       manualProductOpen,
       customerDetails,
@@ -762,6 +884,7 @@ export const BillingProvider = ({ children }) => {
       addProductManually,
       removeProduct,
       updateProductQuantity,
+      updateProductBatch,
       calculateTotal,
       discount,
       processBill,

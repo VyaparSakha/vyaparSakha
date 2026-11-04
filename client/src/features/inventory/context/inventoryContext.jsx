@@ -188,18 +188,22 @@ export const InventoryProvider = ({ children }) => {
 
   // BATCH: Add stock to existing batch
   const addStockToBatch = async (batchId, additionalQty, targetStoreId) => {
-    const effectiveStoreId = targetStoreId || storeId;
+    const rawStore = targetStoreId || storeId;
+    const effectiveStoreId = inventoryService.cleanStoreId(rawStore);
     try {
       setMutationLoading(true);
       setMutationError(null);
       const res = await inventoryService.addStockToBatch(batchId, additionalQty, effectiveStoreId);
+      
+      // TanStack Query keys start with ['stores', storeId, 'inventory']
+      await queryClient.invalidateQueries({ queryKey: ['stores'] });
       await queryClient.invalidateQueries({ queryKey: ['inventory'] });
       if (effectiveStoreId) {
         await queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all(effectiveStoreId) });
         await queryClient.invalidateQueries({ queryKey: queryKeys.stores.detail(effectiveStoreId) });
       }
       showSuccess(`Added ${additionalQty} units to batch successfully!`);
-      return { success: true, data: res };
+      return { success: true, data: res?.data ?? res };
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to add stock to batch';
       setMutationError(msg);
@@ -215,15 +219,18 @@ export const InventoryProvider = ({ children }) => {
     try {
       setMutationLoading(true);
       setMutationError(null);
-      const effectiveStoreId = batchData.storeId || storeId;
+      const rawStore = batchData.storeId || storeId;
+      const effectiveStoreId = inventoryService.cleanStoreId(rawStore);
       const res = await inventoryService.createBatch({ ...batchData, storeId: effectiveStoreId });
+      
+      await queryClient.invalidateQueries({ queryKey: ['stores'] });
       await queryClient.invalidateQueries({ queryKey: ['inventory'] });
       if (effectiveStoreId) {
         await queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all(effectiveStoreId) });
         await queryClient.invalidateQueries({ queryKey: queryKeys.stores.detail(effectiveStoreId) });
       }
       showSuccess(`Batch ${batchData.batchNumber || ''} created successfully!`);
-      return { success: true, data: res };
+      return { success: true, data: res?.data ?? res };
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to create batch';
       setMutationError(msg);
@@ -258,6 +265,8 @@ export const InventoryProvider = ({ children }) => {
     addProduct,
     updateProduct,
     deleteProduct,
+    addStockToBatch,
+    createBatch,
   };
 
   return (

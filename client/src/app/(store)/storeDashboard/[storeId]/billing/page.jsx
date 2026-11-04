@@ -14,6 +14,7 @@ import {
   BillingHeader,
   BillingSyncIndicator,
   BillingProcessingModal,
+  BatchSelectModal,
 } from "@/features/InventoryBilling/components";
 
 /**
@@ -95,6 +96,7 @@ const BillingContent = () => {
         {/* Modals */}
         <ManualProductModal />
         <BillPreviewModal />
+        <BatchSelectModal />
 
         {/* Dedicated Billing-in-Process Modal with Charcoal Printer Animation */}
         <BillingProcessingModal

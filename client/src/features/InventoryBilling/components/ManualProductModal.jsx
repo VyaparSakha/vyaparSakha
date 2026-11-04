@@ -4,6 +4,7 @@ import { useManualProductAdd } from "../hooks";
 import { Package, Search, X } from "lucide-react";
 
 export const ManualProductModal = ({ inline = false }) => {
+  const [selectedBatches, setSelectedBatches] = useState({});
   const {
     searchTerm,
     setSearchTerm,
@@ -22,8 +23,20 @@ export const ManualProductModal = ({ inline = false }) => {
   const renderProductRows = (compact = false) => (
     <div className={compact ? "divide-y divide-slate-100" : "space-y-2.5 max-h-[50vh] overflow-y-auto p-1"}>
       {filteredProducts.map((product) => {
-        const price = Number(product.price || product.sellingPrice || 0);
-        const availableQty = Number(product.quantity || product.qty || 0);
+        const allBatches = Array.isArray(product.batches) ? product.batches : [];
+        const activeBatches = allBatches.filter((b) => !b.isArchived && Number(b.quantity) > 0);
+        const chosenBatchId =
+          selectedBatches[product._id] || (activeBatches[0]?._id) || (allBatches[0]?._id);
+        const chosenBatch =
+          allBatches.find((b) => String(b._id) === String(chosenBatchId)) ||
+          activeBatches[0] ||
+          allBatches[0] ||
+          null;
+
+        const price = Number(chosenBatch?.sellingPrice ?? product.sellingPrice ?? product.price ?? 0);
+        const availableQty = chosenBatch
+          ? Number(chosenBatch.quantity || 0)
+          : Number(product.quantity || product.qty || 0);
 
         return (
           <div
@@ -47,14 +60,39 @@ export const ManualProductModal = ({ inline = false }) => {
             </div>
 
             <div className="min-w-0 flex-1">
-              {/* Batch Number line at the top */}
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.2 rounded">
-                  <span className="w-1 h-1 rounded-full bg-indigo-500 flex-shrink-0" />
-                  <span>
-                    Batch: {product.batchNumber || (product.batches && product.batches.length > 0 ? product.batches.map(b => b.batchNumber).join(", ") : "BATCH-001")}
+              {/* Batch Selector / Info */}
+              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                {allBatches.length > 1 ? (
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      Batch:
+                    </span>
+                    <select
+                      value={chosenBatchId}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setSelectedBatches((prev) => ({
+                          ...prev,
+                          [product._id]: e.target.value,
+                        }));
+                      }}
+                      className="text-[11px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-md px-1.5 py-0.5 focus:outline-none cursor-pointer"
+                    >
+                      {allBatches.map((b) => (
+                        <option key={b._id} value={b._id}>
+                          {b.batchNumber} (₹{b.sellingPrice ?? product.sellingPrice} • Stock: {b.quantity})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.5 rounded">
+                    <span className="w-1 h-1 rounded-full bg-indigo-500 flex-shrink-0" />
+                    <span>
+                      Batch: {chosenBatch?.batchNumber || product.batchNumber || "BATCH-001"}
+                    </span>
                   </span>
-                </span>
+                )}
               </div>
               <p className="truncate text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
                 {product.name}
@@ -92,7 +130,7 @@ export const ManualProductModal = ({ inline = false }) => {
 
             <button
               type="button"
-              onClick={() => addProduct(product)}
+              onClick={() => addProduct(product, chosenBatch)}
               disabled={availableQty <= 0}
               className="shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
             >

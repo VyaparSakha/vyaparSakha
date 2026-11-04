@@ -241,16 +241,39 @@ export const getProductWithBatches = async (barcode, storeId) => {
  * @param {string} storeId
  * @param {boolean} includeArchived
  */
+export const cleanStoreId = (s) => {
+  if (!s) return "";
+  if (typeof s === "object") {
+    const extracted = s._id || s.id || "";
+    return typeof extracted === "string" ? extracted.trim() : "";
+  }
+  const str = String(s).trim();
+  if (str === "undefined" || str === "null" || str === "[object Object]") return "";
+  return str;
+};
+
+/**
+ * Fetch all batches for a product.
+ * Returns array of batch documents.
+ *
+ * @param {string} productId
+ * @param {string|object} storeId
+ * @param {boolean} includeArchived
+ */
 export const getProductBatches = async (productId, storeId, includeArchived = false) => {
   try {
-    const cleanStore = storeId && storeId !== "undefined" && storeId !== "null" ? `storeId=${storeId}&` : "";
-    const response = await apiGet(`/batches/product/${productId}?${cleanStore}includeArchived=${includeArchived}`);
-    const resData = response?.data;
-    if (Array.isArray(resData)) return resData;
-    if (Array.isArray(resData?.data)) return resData.data;
+    const cleanStore = cleanStoreId(storeId);
+    const queryParam = cleanStore ? `storeId=${cleanStore}&` : "";
+    const response = await apiGet(`/batches/product/${productId}?${queryParam}includeArchived=${includeArchived}`);
+    
+    // axios interceptor unwraps response.data, so response is { success: true, data: [...], ... } or raw array
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.data?.data)) return response.data.data;
     return [];
   } catch (error) {
-    throw error;
+    console.warn("[INVENTORY SERVICE] Error fetching batches:", error);
+    return [];
   }
 };
 
@@ -261,7 +284,7 @@ export const getProductBatches = async (productId, storeId, includeArchived = fa
 export const getNextBatchNumber = async (productId) => {
   try {
     const response = await apiGet(`/batches/next-number/${productId}`);
-    return response?.data?.data?.batchNumber ?? response?.data?.batchNumber ?? 'BATCH-001';
+    return response?.data?.data?.batchNumber ?? response?.data?.batchNumber ?? response?.batchNumber ?? 'BATCH-001';
   } catch (error) {
     return 'BATCH-001';
   }
@@ -273,8 +296,17 @@ export const getNextBatchNumber = async (productId) => {
  */
 export const createBatch = async (batchData) => {
   try {
-    const response = await apiPost('/batches', batchData);
-    return response?.data?.data ?? response?.data;
+    const cleanStore = cleanStoreId(batchData?.storeId);
+    const response = await apiPost('/batches', {
+      ...batchData,
+      storeId: cleanStore || undefined,
+    });
+    const data = response?.data ?? response;
+    return {
+      success: true,
+      data,
+      message: response?.message || "Batch created successfully",
+    };
   } catch (error) {
     throw error;
   }
@@ -284,17 +316,22 @@ export const createBatch = async (batchData) => {
  * Add stock to an existing batch
  * @param {string} batchId
  * @param {number} additionalQty
- * @param {string} storeId
+ * @param {string|object} storeId
  */
 export const addStockToBatch = async (batchId, additionalQty, storeId) => {
   try {
-    const cleanStore = storeId && storeId !== "undefined" && storeId !== "null" ? storeId : "";
+    const cleanStore = cleanStoreId(storeId);
     const queryParam = cleanStore ? `?storeId=${cleanStore}` : "";
     const response = await apiPatch(`/batches/${batchId}/stock${queryParam}`, {
       additionalQty: Number(additionalQty),
       storeId: cleanStore || undefined,
     });
-    return response?.data?.data ?? response?.data;
+    const batchData = response?.data ?? response;
+    return {
+      success: true,
+      data: batchData,
+      message: response?.message || "Stock added successfully",
+    };
   } catch (error) {
     throw error;
   }
@@ -303,13 +340,17 @@ export const addStockToBatch = async (batchId, additionalQty, storeId) => {
 /**
  * Archive a batch manually
  * @param {string} batchId
- * @param {string} storeId
+ * @param {string|object} storeId
  */
 export const archiveBatch = async (batchId, storeId) => {
   try {
-    const cleanStore = storeId && storeId !== "undefined" && storeId !== "null" ? `?storeId=${storeId}` : "";
-    const response = await apiPatch(`/batches/${batchId}/archive${cleanStore}`);
-    return response?.data?.data ?? response?.data;
+    const cleanStore = cleanStoreId(storeId);
+    const queryParam = cleanStore ? `?storeId=${cleanStore}` : "";
+    const response = await apiPatch(`/batches/${batchId}/archive${queryParam}`);
+    return {
+      success: true,
+      data: response?.data ?? response,
+    };
   } catch (error) {
     throw error;
   }

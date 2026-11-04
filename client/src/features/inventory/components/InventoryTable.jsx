@@ -612,8 +612,18 @@ const InventoryTable = ({
           storeId={storeId}
           onSuccess={(freshBatches) => {
             if (freshBatches) {
+              const updatedTotalStock = freshBatches.reduce(
+                (acc, b) => acc + (b.isArchived ? 0 : Number(b.quantity || 0)),
+                0
+              );
               setSelectedProductForBatch((prev) =>
-                prev ? { ...prev, batches: freshBatches } : null
+                prev
+                  ? {
+                      ...prev,
+                      quantity: updatedTotalStock,
+                      batches: freshBatches,
+                    }
+                  : null
               );
             }
           }}
