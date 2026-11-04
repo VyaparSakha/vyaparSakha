@@ -10,6 +10,7 @@ import PageLoader from "@/components/PageLoader";
 import NotificationBell from "@/features/notification/components/NotificationBell";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslation } from "@/i18n/LanguageContext";
+import { stripLocaleFromPath } from "@/i18n/config";
 
 // App navigation items for authenticated users when browsing internal pages
 const NAV_ITEMS_LOGGED_IN = [
@@ -71,7 +72,8 @@ const getUserInitials = (displayName) => {
 };
 
 export default function Navbar() {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = useMemo(() => stripLocaleFromPath(rawPathname), [rawPathname]);
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);

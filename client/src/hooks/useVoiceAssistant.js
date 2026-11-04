@@ -1,3 +1,4 @@
+import { emitAgentRefresh } from "@/servies/agentEventBus";
 import { useState, useRef, useCallback } from 'react';
 
 // Resample Float32 from srcRate to 16kHz for Gemini input
@@ -302,6 +303,7 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
             setIsReady(false);
             stopRecordingImpl();
             wsRef.current = null;
+            try { emitAgentRefresh("ai_billing"); } catch (_) {}
         };
     }, [userId, storeId]);
 

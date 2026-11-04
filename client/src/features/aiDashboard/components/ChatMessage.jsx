@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
+  Zap,
   ExternalLink,
   Volume2,
   VolumeX,
@@ -1434,11 +1435,19 @@ function MarkdownRenderer({ content, className = "", isStreaming = false }) {
                 </div>
               ) : <div />}
 
-              {message.timestamp && (
-                <p className="text-[10px] text-slate-400">
-                  {formatTimestamp(message.timestamp)}
-                </p>
-              )}
+              <div className="flex items-center gap-2">
+                {message.creditsCharged > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
+                    <Zap className="h-2.5 w-2.5 fill-amber-500" />
+                    <span>{message.creditsCharged} credits</span>
+                  </span>
+                )}
+                {message.timestamp && (
+                  <p className="text-[10px] text-slate-400">
+                    {formatTimestamp(message.timestamp)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}

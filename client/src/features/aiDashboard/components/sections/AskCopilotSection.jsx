@@ -12,6 +12,7 @@ import CartoonVoiceBotView from "../CartoonVoiceBotView";
 import { buildVisualsFromToolCalls } from "@/lib/visuals/fromToolCalls";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
+import { useAiWallet } from "@/features/settings/hooks/useAiWallet";
 import CopilotHeader from "../copilot/CopilotHeader";
 import CopilotInputBar from "../copilot/CopilotInputBar";
 import {
@@ -158,6 +159,7 @@ const AskCopilotSection = ({
   onStoreDetected,
 }) => {
   const { user } = useAuth();
+  const { availableBalance, isExhausted, isLowBalance } = useAiWallet(storeId);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -999,6 +1001,32 @@ const AskCopilotSection = ({
               return;
             }
 
+            if (event === "usage") {
+              const charged = payload?.creditsConsumed || payload?.creditsCharged || 0;
+              setMessages((prev) =>
+                prev.map((entry) =>
+                  entry.id === assistantId
+                    ? { ...entry, creditsCharged: charged, usageMetadata: payload }
+                    : entry
+                )
+              );
+              emitAgentRefresh("ai_billing");
+              return;
+            }
+
+            if (event === "usage") {
+              const charged = payload?.creditsConsumed || payload?.creditsCharged || 0;
+              setMessages((prev) =>
+                prev.map((entry) =>
+                  entry.id === assistantId
+                    ? { ...entry, creditsCharged: charged, usageMetadata: payload }
+                    : entry
+                )
+              );
+              emitAgentRefresh("ai_billing");
+              return;
+            }
+
             if (event === "done") {
               activeStreamingChatIdRef.current = null;
               updateAssistantMeta(assistantId, payload || null);
@@ -1059,7 +1087,10 @@ const AskCopilotSection = ({
         });
       } catch (streamError) {
         activeStreamingChatIdRef.current = null;
-        const errorMessage = streamError?.message || "Unable to stream copilot response.";
+        let errorMessage = streamError?.message || "Unable to stream copilot response.";
+        if (streamError?.status === 402 || streamError?.code === "INSUFFICIENT_CREDITS") {
+          errorMessage = "You have insufficient AI credits to start this operation. Please check your available balance or add more credits in Settings.";
+        }
         setError(errorMessage);
         updateAssistantError(assistantId, errorMessage);
         setLoading(false);

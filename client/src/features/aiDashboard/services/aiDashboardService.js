@@ -82,7 +82,13 @@ export const streamCopilotResponse = async ({
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");
-    throw new Error(errorText || `Failed with status ${response.status}`);
+    let errorJson = null;
+    try { errorJson = JSON.parse(errorText); } catch (_) {}
+    const err = new Error(errorJson?.message || errorText || `Failed with status ${response.status}`);
+    err.status = response.status;
+    err.code = errorJson?.code || (response.status === 402 ? "INSUFFICIENT_CREDITS" : null);
+    err.data = errorJson;
+    throw err;
   }
 
   if (!response.body) {
@@ -174,7 +180,13 @@ export const streamClarifyResponse = async ({
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");
-    throw new Error(errorText || `Clarify failed with status ${response.status}`);
+    let errorJson = null;
+    try { errorJson = JSON.parse(errorText); } catch (_) {}
+    const err = new Error(errorJson?.message || errorText || `Clarify failed with status ${response.status}`);
+    err.status = response.status;
+    err.code = errorJson?.code || (response.status === 402 ? "INSUFFICIENT_CREDITS" : null);
+    err.data = errorJson;
+    throw err;
   }
 
   if (!response.body) {

@@ -3,11 +3,13 @@
 import React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Plus, MessageSquare, X, Maximize2 } from "lucide-react";
+import { Plus, MessageSquare, X, Maximize2, Zap, AlertTriangle } from "lucide-react";
+import { useAiWallet } from "@/features/settings/hooks/useAiWallet";
 
 export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose, storeId }) {
   const params = useParams();
   const currentStoreId = storeId || params?.storeId;
+  const { availableBalance, isExhausted, isLowBalance } = useAiWallet(currentStoreId);
   return (
     <div className="flex flex-shrink-0 items-center justify-between border-b border-slate-100 bg-white/95 px-5 py-3.5 backdrop-blur-md">
       <div className="flex items-center gap-3">
@@ -33,7 +35,25 @@ export default function CopilotHeader({ onNewChat, onToggleSidebar, onClose, sto
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
+        <Link
+          href="/settings/ai-plan"
+          className={`group inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-all border ${
+            isExhausted
+              ? "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+              : isLowBalance
+              ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+              : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+          }`}
+          title="Click to view AI credit wallet and usage limits in Settings"
+        >
+          {isExhausted ? (
+            <AlertTriangle className="h-3 w-3 text-rose-500" />
+          ) : (
+            <Zap className="h-3 w-3 fill-blue-500 text-blue-600" />
+          )}
+          <span>{availableBalance.toLocaleString()} credits</span>
+        </Link>
         <button
           type="button"
           onClick={onNewChat}
