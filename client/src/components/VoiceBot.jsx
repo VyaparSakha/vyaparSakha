@@ -1,6 +1,7 @@
 'use client';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useWorkspaceContext } from '@/context/WorkspaceContext';
 import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, PhoneOff } from 'lucide-react';
@@ -8,6 +9,7 @@ import { Mic, MicOff, Volume2, VolumeX, PhoneOff } from 'lucide-react';
 export default function VoiceBot() {
     const { user, isAuthenticated } = useAuth();
     const pathname = usePathname();
+    const { currentWorkspace, workspaces } = useWorkspaceContext();
 
     // Extract storeId from URL: /storeDashboard/[storeId]/...
     const storeId = useMemo(() => {
@@ -21,8 +23,25 @@ export default function VoiceBot() {
     // Only show on store dashboard pages where we have both IDs
     const isOnDashboard = Boolean(storeId && userId && isAuthenticated);
 
+    // Resolve active workspace matching storeId
+    const activeWorkspace = useMemo(() => {
+        if (!storeId) return null;
+        if (currentWorkspace && String(currentWorkspace.storeId) === String(storeId)) {
+            return currentWorkspace;
+        }
+        return (workspaces || []).find((w) => String(w.storeId) === String(storeId)) || null;
+    }, [storeId, currentWorkspace, workspaces]);
+
+    const isOwner = Boolean(activeWorkspace?.isOwner || activeWorkspace?.membershipType === 'owner');
+    const userRole = activeWorkspace?.role || (isOwner ? 'Owner' : 'Employee');
+    const permissions = Array.isArray(activeWorkspace?.permissions) ? activeWorkspace.permissions : (isOwner ? ['*'] : []);
+
     const { isConnected, isReady, isRecording, isMuted, permissionError, connect, disconnect, startRecording, stopRecording, toggleMute } =
-        useVoiceAssistant(userId, storeId);
+        useVoiceAssistant(userId, storeId, {
+            userRole,
+            isOwner,
+            permissions,
+        });
 
     // Don't render on auth pages or without valid context
     if (!isOnDashboard) return null;
@@ -84,5 +103,3 @@ export default function VoiceBot() {
         </div>
     );
 }
-
-

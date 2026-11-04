@@ -244,6 +244,21 @@ export const useVoiceAssistant = (userId, storeId, options = {}) => {
         const wsUrl = new URL('/ws/voice', aiWsBase);
         wsUrl.searchParams.set('user_id', String(userId));
         wsUrl.searchParams.set('store_id', String(storeId));
+
+        const activeRole = optionsRef.current?.userRole;
+        const activeIsOwner = optionsRef.current?.isOwner;
+        const activePerms = optionsRef.current?.permissions;
+
+        if (activeRole) {
+            wsUrl.searchParams.set('user_role', String(activeRole));
+        }
+        if (typeof activeIsOwner === 'boolean') {
+            wsUrl.searchParams.set('is_owner', String(activeIsOwner));
+        }
+        if (Array.isArray(activePerms) && activePerms.length > 0) {
+            wsUrl.searchParams.set('permissions', activePerms.join(','));
+        }
+
         console.log('[Voice] Connecting to:', wsUrl.toString());
 
         const ws = new WebSocket(wsUrl.toString());
