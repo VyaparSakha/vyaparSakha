@@ -47,6 +47,15 @@ export const ManualProductModal = ({ inline = false }) => {
             </div>
 
             <div className="min-w-0 flex-1">
+              {/* Batch Number line at the top */}
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.2 rounded">
+                  <span className="w-1 h-1 rounded-full bg-indigo-500 flex-shrink-0" />
+                  <span>
+                    Batch: {product.batchNumber || (product.batches && product.batches.length > 0 ? product.batches.map(b => b.batchNumber).join(", ") : "BATCH-001")}
+                  </span>
+                </span>
+              </div>
               <p className="truncate text-xs sm:text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
                 {product.name}
               </p>

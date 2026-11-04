@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import PageLoader from "@/components/PageLoader";
-import { uploadProductImage } from "../services/inventoryService";
+import { uploadProductImage, getProductBatches } from "../services/inventoryService";
+import { useInventoryContext } from "../context/inventoryContext";
 import { STANDARD_UNITS } from "./AddProductModal";
 
 const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
+  const { storeId } = useInventoryContext();
   const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef(null);
   useEffect(() => {
@@ -14,6 +16,8 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
   }, []);
   const [formData, setFormData] = useState({
     name: "",
+    brand: "",
+    batchNumber: "",
     category: "General",
     qty: "",
     unit: "Pieces",
@@ -116,9 +120,17 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
         setIsCustomUnit(false);
       }
 
+      const activeBatchNumber =
+        product.batchNumber ||
+        product.batches?.find(b => !b.isArchived)?.batchNumber ||
+        product.batches?.[0]?.batchNumber ||
+        "";
+
       setFormData({
         name: product.name || "",
+        brand: product.brand || "",
         category: product.category || "General",
+        batchNumber: activeBatchNumber || "BATCH-001",
         qty: (product.quantity ?? product.qty ?? 0).toString(),
         unit: currentUnit,
         sellingPrice: (product.sellingPrice ?? 0).toString(),
@@ -127,6 +139,24 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
         barcode: product.barcode || "",
         image: product.image || "",
       });
+
+      // Always check backend batches to ensure accurate active batch number
+      const prodId = product._id || product.id;
+      if (prodId) {
+        getProductBatches(prodId, storeId)
+          .then((batches) => {
+            if (batches && batches.length > 0) {
+              const active = batches.find((b) => !b.isArchived) || batches[0];
+              if (active?.batchNumber) {
+                setFormData((prev) => ({
+                  ...prev,
+                  batchNumber: active.batchNumber,
+                }));
+              }
+            }
+          })
+          .catch(() => {});
+      }
 
       setExtraQty("");
       setShowAddInput(false);
@@ -208,6 +238,7 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
   return ReactDOM.createPortal(
     <>
       {showOverlay && <PageLoader message="Updating product in inventory..." />}
+
       <div className="fixed top-0 inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       {/* Backdrop */}
       <div
@@ -220,12 +251,22 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">
-              Edit Product
-            </h2>
+            {/* Batch Number top line indicator */}
+            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200 px-2 py-0.5 rounded-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                <span>
+                  Batch: {formData.batchNumber || product?.batchNumber || (product?.batches && product.batches.length > 0 ? product.batches.map(b => b.batchNumber).join(", ") : "BATCH-001")}
+                </span>
+              </span>
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                Edit Product
+              </h2>
+            </div>
             <p className="text-xs text-slate-600 mt-0.5 font-semibold">
-              Editing{" "}
-              <span className="font-bold text-blue-600">"{product?.name}"</span>
+              Editing <span className="font-bold text-blue-600">"{product?.name}"</span>
             </p>
           </div>
           <button
@@ -263,6 +304,37 @@ const EditProductModal = ({ isOpen, onClose, onUpdate, loading, product }) => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Product Name"
+                className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
+              />
+            </div>
+
+                        {/* Brand */}
+            <div className="col-span-12 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                Brand <span className="text-slate-400 normal-case font-medium">(optional)</span>
+              </label>
+              <input
+                name="brand"
+                value={formData.brand || ""}
+                onChange={handleChange}
+                placeholder="Ex: Nestlé, Amul, Dettol"
+                className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
+              />
+            </div>
+
+            {/* Batch Number */}
+            <div className="col-span-12 flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                <span>Batch Number</span>
+                <span className="text-[11px] text-slate-400 normal-case font-medium">
+                  (Active Batch #)
+                </span>
+              </label>
+              <input
+                name="batchNumber"
+                value={formData.batchNumber || ""}
+                onChange={handleChange}
+                placeholder="Ex: BATCH-001, LOT-2026A"
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
               />
             </div>

@@ -85,6 +85,15 @@ export const BilledProductsList = () => {
                   </div>
 
                   <div className="min-w-0 flex-1">
+                    {/* Batch Number line at the top */}
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                        <span>
+                          Batch: {product.batchNumber || (product.batches && product.batches.length > 0 ? product.batches.map(b => b.batchNumber).join(", ") : "BATCH-001")}
+                        </span>
+                      </span>
+                    </div>
                     <h3 className="font-bold text-slate-900 text-sm truncate">
                       {product.name}
                     </h3>

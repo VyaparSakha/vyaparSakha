@@ -1,4 +1,4 @@
-import { apiPost, apiGet, apiPut, apiDelete } from "@/servies/api";
+import { apiPost, apiGet, apiPut, apiDelete, apiPatch } from "@/servies/api";
 
 /**
  * Inventory Service - Handles product and stock related API calls
@@ -218,3 +218,99 @@ export const sendInstantStockAlertMail = async (storeId) => {
 };
 
 
+
+/**
+ * Lookup product details along with its existing batches by barcode in store
+ * @param {string} barcode
+ * @param {string} storeId
+ */
+export const getProductWithBatches = async (barcode, storeId) => {
+  try {
+    if (!barcode || !storeId) return null;
+    const response = await apiGet(`/product/barcode/${encodeURIComponent(barcode)}/details?storeId=${storeId}`);
+    return response?.data ?? null;
+  } catch (error) {
+    if (error?.status === 404 || error?.statusCode === 404) return null;
+    return null;
+  }
+};
+
+/**
+ * Fetch all batches for a product
+ * @param {string} productId
+ * @param {string} storeId
+ * @param {boolean} includeArchived
+ */
+export const getProductBatches = async (productId, storeId, includeArchived = false) => {
+  try {
+    const cleanStore = storeId && storeId !== "undefined" && storeId !== "null" ? `storeId=${storeId}&` : "";
+    const response = await apiGet(`/batches/product/${productId}?${cleanStore}includeArchived=${includeArchived}`);
+    const resData = response?.data;
+    if (Array.isArray(resData)) return resData;
+    if (Array.isArray(resData?.data)) return resData.data;
+    return [];
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Get next auto-generated batch number preview for a product
+ * @param {string} productId
+ */
+export const getNextBatchNumber = async (productId) => {
+  try {
+    const response = await apiGet(`/batches/next-number/${productId}`);
+    return response?.data?.data?.batchNumber ?? response?.data?.batchNumber ?? 'BATCH-001';
+  } catch (error) {
+    return 'BATCH-001';
+  }
+};
+
+/**
+ * Create a new batch for an existing product
+ * @param {object} batchData
+ */
+export const createBatch = async (batchData) => {
+  try {
+    const response = await apiPost('/batches', batchData);
+    return response?.data?.data ?? response?.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Add stock to an existing batch
+ * @param {string} batchId
+ * @param {number} additionalQty
+ * @param {string} storeId
+ */
+export const addStockToBatch = async (batchId, additionalQty, storeId) => {
+  try {
+    const cleanStore = storeId && storeId !== "undefined" && storeId !== "null" ? storeId : "";
+    const queryParam = cleanStore ? `?storeId=${cleanStore}` : "";
+    const response = await apiPatch(`/batches/${batchId}/stock${queryParam}`, {
+      additionalQty: Number(additionalQty),
+      storeId: cleanStore || undefined,
+    });
+    return response?.data?.data ?? response?.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Archive a batch manually
+ * @param {string} batchId
+ * @param {string} storeId
+ */
+export const archiveBatch = async (batchId, storeId) => {
+  try {
+    const cleanStore = storeId && storeId !== "undefined" && storeId !== "null" ? `?storeId=${storeId}` : "";
+    const response = await apiPatch(`/batches/${batchId}/archive${cleanStore}`);
+    return response?.data?.data ?? response?.data;
+  } catch (error) {
+    throw error;
+  }
+};
