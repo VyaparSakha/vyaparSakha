@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import { useManualProductAdd } from "../hooks";
 import { Package, Search, X } from "lucide-react";
 
