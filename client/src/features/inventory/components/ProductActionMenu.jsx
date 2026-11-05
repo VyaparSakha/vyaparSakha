@@ -13,7 +13,7 @@ import { useInventoryContext } from "../context/inventoryContext";
  * @param {Function} onEdit    - Callback when Edit is clicked
  * @param {Function} onDelete  - Callback when Delete is clicked
  */
-const ProductActionMenu = ({ onDetails, onEdit, onDelete }) => {
+const ProductActionMenu = ({ onDetails, onBatches, onEdit, onDelete }) => {
   const { hasPermission } = useInventoryContext();
   const [isOpen, setIsOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -23,6 +23,7 @@ const ProductActionMenu = ({ onDetails, onEdit, onDelete }) => {
   const canEdit = hasPermission('inventory:manage');
   const canDelete = hasPermission('inventory:manage');
   const showDetails = typeof onDetails === "function";
+  const showBatches = typeof onBatches === "function";
 
   // Calculate dropdown position from the trigger button's bounding rect
   const openMenu = () => {
@@ -61,7 +62,7 @@ const ProductActionMenu = ({ onDetails, onEdit, onDelete }) => {
   }, [isOpen]);
 
   // If no actions are available, don't show the menu
-  if (!showDetails && !canEdit && !canDelete) return null;
+  if (!showDetails && !showBatches && !canEdit && !canDelete) return null;
 
   const dropdown = isOpen
     ? ReactDOM.createPortal(
@@ -83,7 +84,19 @@ const ProductActionMenu = ({ onDetails, onEdit, onDelete }) => {
             </button>
           )}
 
-          {showDetails && (canEdit || canDelete) && <div className="border-t border-slate-100 mx-2" />}
+          {showBatches && (
+            <button
+              onClick={() => { setIsOpen(false); onBatches?.(); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+            >
+              <svg className="h-4 w-4 flex-shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              Batch
+            </button>
+          )}
+
+          {(showDetails || showBatches) && (canEdit || canDelete) && <div className="border-t border-slate-100 mx-2" />}
 
           {canEdit && (
             <button

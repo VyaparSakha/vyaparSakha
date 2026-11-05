@@ -405,52 +405,40 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
       buyingPrice: Number(formData.buyingPrice),
     };
 
-    if (isUpdateMode && storeProductId) {
-      // ── Update existing store product ───────────────────────────────────────
-      setUpdating(true);
-      try {
-        const result = await updateProduct(storeProductId, payload);
-        if (result?.success) {
-          setFormData(createInitialFormData());
-          setImageOrigin("");
-          setImageUploadState({ status: "idle", error: "" });
-          setResolveStatus(null);
-          setIsUpdateMode(false);
-          setStoreProductId(null);
-          onClose();
-        }
-      } finally {
-        setUpdating(false);
-      }
-    } else {
-      // ── Add new store product ───────────────────────────────────────────────
+    setUpdating(true);
+    try {
+      let result = null;
       if (onAction) {
-        const result = await onAction(payload);
-        if (result?.success) {
-          // Save to MasterProduct async when product has a barcode and wasn't from master/external
-          // (external resolver already saved it; master_found means it's already there)
-          if (
-            formData.barcode &&
-            (resolveStatus === "not_found" || resolveStatus === null || resolveStatus === "error")
-          ) {
-            saveToMasterProduct({
-              barcode: formData.barcode,
-              name: formData.name,
-              brand: formData.brand,
-              category: formData.category,
-              image: formData.image,
-              source: "user-submitted",
-            }).catch(() => {
-              // Silently ignore — saving to master catalog is non-critical
-            });
-          }
-          setFormData(createInitialFormData());
-          setImageOrigin("");
-          setImageUploadState({ status: "idle", error: "" });
-          setResolveStatus(null);
-          onClose();
-        }
+        result = await onAction(payload);
+      } else if (isUpdateMode && storeProductId) {
+        result = await updateProduct(storeProductId, payload);
       }
+      if (result?.success) {
+        if (
+          formData.barcode &&
+          (resolveStatus === "not_found" || resolveStatus === null || resolveStatus === "error")
+        ) {
+          saveToMasterProduct({
+            barcode: formData.barcode,
+            name: formData.name,
+            brand: formData.brand,
+            category: formData.category,
+            image: formData.image,
+            source: "user-submitted",
+          }).catch(() => {
+            // Silently ignore — saving to master catalog is non-critical
+          });
+        }
+        setFormData(createInitialFormData());
+        setImageOrigin("");
+        setImageUploadState({ status: "idle", error: "" });
+        setResolveStatus(null);
+        setIsUpdateMode(false);
+        setStoreProductId(null);
+        onClose();
+      }
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -470,6 +458,8 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
           message={isUpdateMode ? "Updating product..." : "Adding product to inventory..."}
         />
       )}
+
+
 
       {/* Barcode Scanner Modal */}
       {scannerOpen && (
@@ -584,10 +574,38 @@ const AddProductModal = ({ isOpen, onClose, onAction, loading }) => {
                 </select>
               </div>
 
+              <div className="col-span-12 pt-3 pb-1 border-b border-slate-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />
+                    {isUpdateMode ? "Stock & Pricing" : "Initial Batch Details"}
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {isUpdateMode ? "Adds to existing batch or creates new batch" : "Stored in Product's 1st Batch"}
+                  </span>
+                </div>
+              </div>
+              {/* Batch Number (Manual Entry) */}
+              <div className="col-span-12 flex flex-col gap-2">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                  <span>Batch Number</span>
+                  <span className="text-[11px] text-slate-400 normal-case font-medium">
+{isUpdateMode ? "(Same batch # adds stock; new batch # creates a new batch)" : "(Enter manual batch number or leave blank for auto BATCH-001)"}
+                  </span>
+                </label>
+                <input
+                  name="batchNumber"
+                  value={formData.batchNumber || ""}
+                  onChange={handleChange}
+                  placeholder="Ex: BATCH-001, LOT-2026A, M-101"
+                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold"
+                />
+              </div>
+
               {/* Qty & Unit */}
               <div className="col-span-5 flex flex-col gap-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide min-h-[32px] flex items-end">
-                  {isUpdateMode ? "Quantity" : "Initial Qty"}
+{isUpdateMode ? "Quantity to Add" : "Initial Qty"}
                 </label>
                 <input
                   required

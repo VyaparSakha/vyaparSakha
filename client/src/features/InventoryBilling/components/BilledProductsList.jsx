@@ -7,7 +7,7 @@ import { useBillingContext } from "../context/billingContext";
 import { Trash2, Plus, Minus, Package } from "lucide-react";
 
 export const BilledProductsList = () => {
-  const { billedProducts, removeProduct, updateProductQuantity } =
+  const { billedProducts, removeProduct, updateProductQuantity, updateProductBatch } =
     useBillingContext();
   const [mounted, setMounted] = useState(false);
 
@@ -67,11 +67,16 @@ export const BilledProductsList = () => {
             const price = product.price || product.sellingPrice || 0;
             const quantity = product.billedQuantity || 1;
             const total = price * quantity;
-            const availableQty = product.quantity || product.qty || 0;
+            const availableQty =
+              product.batchStock !== undefined
+                ? product.batchStock
+                : product.quantity || product.qty || 0;
+
+            const lineId = product.lineId || product._id;
 
             return (
               <div
-                key={product._id}
+                key={lineId}
                 className="p-3.5 sm:p-4 hover:bg-slate-50/70 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
               >
                 {/* Product Info */}
@@ -85,6 +90,34 @@ export const BilledProductsList = () => {
                   </div>
 
                   <div className="min-w-0 flex-1">
+                    {/* Batch Selector / Badge */}
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      {product.batches && product.batches.length > 1 ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            Batch:
+                          </span>
+                          <select
+                            value={product.selectedBatchId || product.batches[0]?._id}
+                            onChange={(e) => updateProductBatch(lineId, e.target.value)}
+                            className="text-[11px] font-mono font-bold bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-md px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                          >
+                            {product.batches.map((b) => (
+                              <option key={b._id} value={b._id}>
+                                {b.batchNumber} (₹{b.sellingPrice ?? product.sellingPrice} • Stock: {b.quantity})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                          <span>
+                            Batch: {product.selectedBatchNumber || product.batchNumber || (product.batches?.[0]?.batchNumber) || "BATCH-001"}
+                          </span>
+                        </span>
+                      )}
+                    </div>
                     <h3 className="font-bold text-slate-900 text-sm truncate">
                       {product.name}
                     </h3>
@@ -112,7 +145,7 @@ export const BilledProductsList = () => {
                   <div className="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200/60">
                     <button
                       onClick={() =>
-                        updateProductQuantity(product._id, quantity - 1)
+                        updateProductQuantity(lineId, quantity - 1)
                       }
                       className="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all disabled:opacity-40 disabled:hover:bg-white shadow-xs"
                       disabled={quantity <= 1}
@@ -126,7 +159,7 @@ export const BilledProductsList = () => {
                       value={quantity}
                       onChange={(e) => {
                         const newQty = Number.parseInt(e.target.value, 10) || 1;
-                        updateProductQuantity(product._id, newQty);
+                        updateProductQuantity(lineId, newQty);
                       }}
                       className="w-11 sm:w-12 text-center bg-transparent font-bold text-slate-900 text-sm focus:outline-none"
                       min="1"
@@ -135,7 +168,7 @@ export const BilledProductsList = () => {
 
                     <button
                       onClick={() =>
-                        updateProductQuantity(product._id, quantity + 1)
+                        updateProductQuantity(lineId, quantity + 1)
                       }
                       className="w-7 h-7 rounded-lg bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all disabled:opacity-40 disabled:hover:bg-white shadow-xs"
                       disabled={quantity >= availableQty}
@@ -157,7 +190,7 @@ export const BilledProductsList = () => {
 
                   {/* Delete Button */}
                   <button
-                    onClick={() => removeProduct(product._id)}
+                    onClick={() => removeProduct(lineId)}
                     className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                     title="Remove from bill"
                     aria-label="Remove item"

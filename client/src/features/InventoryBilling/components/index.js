@@ -8,3 +8,4 @@ export { BillingHeader } from "./BillingHeader";
 export { BillingActions } from "./BillingActions";
 export { BillingSyncIndicator } from "./BillingSyncIndicator";
 export { default as UpiQrModal } from "./UpiQrModal";
+export { BatchSelectModal } from "./BatchSelectModal";

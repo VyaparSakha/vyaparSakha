@@ -3,17 +3,24 @@
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import dynamic from "next/dynamic";
 import ProductActionMenu from "./ProductActionMenu";
 import { sendInstantStockAlertMail } from "../services/inventoryService";
 
-const getExpiryMeta = (expDate) => {
+// Lazy-load Manage Batches modal on demand only when user clicks "Batch"
+const ExistingProductModal = dynamic(() => import("./ExistingProductModal"), {
+  ssr: false,
+  loading: () => null,
+});
+
+const getSingleExpiryMeta = (expDate) => {
   if (!expDate) {
-    return { dot: "bg-slate-300", label: "-" };
+    return { status: "none", dot: "bg-slate-300", label: "-", daysLeft: Infinity, text: "No Expiry" };
   }
 
   const expiry = new Date(expDate);
   if (Number.isNaN(expiry.getTime())) {
-    return { dot: "bg-slate-300", label: "-" };
+    return { status: "none", dot: "bg-slate-300", label: "-", daysLeft: Infinity, text: "No Expiry" };
   }
 
   const today = new Date();
@@ -21,15 +28,93 @@ const getExpiryMeta = (expDate) => {
   const msDiff = expiry.getTime() - today.getTime();
   const daysLeft = Math.ceil(msDiff / (1000 * 60 * 60 * 24));
 
+  const formattedDate = expiry.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
   if (daysLeft < 0) {
-    return { dot: "bg-red-500", label: expiry.toLocaleDateString() };
+    return {
+      status: "red",
+      dot: "bg-red-500 shadow-sm shadow-red-500/50",
+      label: formattedDate,
+      daysLeft,
+      text: `Expired (${Math.abs(daysLeft)}d ago)`,
+    };
   }
 
   if (daysLeft <= 30) {
-    return { dot: "bg-amber-500 animate-pulse", label: expiry.toLocaleDateString() };
+    return {
+      status: "yellow",
+      dot: "bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50",
+      label: formattedDate,
+      daysLeft,
+      text: `Expiring soon (${daysLeft}d left)`,
+    };
   }
 
-  return { dot: "bg-emerald-400", label: expiry.toLocaleDateString() };
+  return {
+    status: "green",
+    dot: "bg-emerald-500 shadow-sm shadow-emerald-500/50",
+    label: formattedDate,
+    daysLeft,
+    text: `Good (${daysLeft}d left)`,
+  };
+};
+
+const getProductExpiryMeta = (item) => {
+  const activeBatches = (item.batches || []).filter(
+    (b) => !b.isArchived && Number(b.quantity || 0) > 0,
+  );
+  const batchList = activeBatches;
+
+  let listWithMeta = [];
+  if (batchList.length > 0) {
+    listWithMeta = batchList.map((b) => ({
+      ...b,
+      meta: getSingleExpiryMeta(b.expiryDate),
+    }));
+  } else if (item.expDate) {
+    listWithMeta = [
+      {
+        _id: item._id || "single",
+        batchNumber: item.batchNumber || "BATCH-001",
+        quantity: item.quantity ?? 0,
+        expiryDate: item.expDate,
+        meta: getSingleExpiryMeta(item.expDate),
+      },
+    ];
+  }
+
+  // If any is red -> Red
+  // Else if any is yellow -> Yellow
+  // Else if any is green -> Green
+  const hasRed = listWithMeta.some((b) => b.meta.status === "red");
+  const hasYellow = listWithMeta.some((b) => b.meta.status === "yellow");
+  const hasGreen = listWithMeta.some((b) => b.meta.status === "green");
+
+  let primaryDot = "bg-slate-300";
+  let primaryStatus = "none";
+
+  if (hasRed) {
+    primaryDot = "bg-red-500 shadow-sm shadow-red-500/50";
+    primaryStatus = "red";
+  } else if (hasYellow) {
+    primaryDot = "bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50";
+    primaryStatus = "yellow";
+  } else if (hasGreen) {
+    primaryDot = "bg-emerald-500 shadow-sm shadow-emerald-500/50";
+    primaryStatus = "green";
+  }
+
+  return {
+    primaryStatus,
+    primaryDot,
+    hasDropdown: listWithMeta.length > 0,
+    batches: listWithMeta,
+    singleLabel: listWithMeta[0]?.meta?.label || "-",
+  };
 };
 
 const InventoryTable = ({
@@ -51,6 +136,31 @@ const InventoryTable = ({
   const router = useRouter();
   const storeId = params?.storeId;
   const [isSendingMail, setIsSendingMail] = useState(false);
+  const [expandedProductIds, setExpandedProductIds] = useState({});
+  const [selectedProductForBatch, setSelectedProductForBatch] = useState(null);
+  const [openExpiryDropdownId, setOpenExpiryDropdownId] = useState(null);
+  const [openPriceDropdownId, setOpenPriceDropdownId] = useState(null);
+
+  React.useEffect(() => {
+    if (!openExpiryDropdownId && !openPriceDropdownId) return;
+    const handleOutside = (e) => {
+      if (openExpiryDropdownId && !e.target.closest(".expiry-dropdown-container")) {
+        setOpenExpiryDropdownId(null);
+      }
+      if (openPriceDropdownId && !e.target.closest(".price-dropdown-container")) {
+        setOpenPriceDropdownId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [openExpiryDropdownId, openPriceDropdownId]);
+
+  const toggleExpandBatches = (id) => {
+    setExpandedProductIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   const handleSendInstantMail = async () => {
     if (!storeId) {
@@ -189,7 +299,23 @@ const InventoryTable = ({
               const qty = Number(item.quantity ?? item.qty ?? 0);
               const category = item.category || "General";
               const barcode = item.barcode || "-";
-              const expiry = getExpiryMeta(item.expDate);
+              const expiryMeta = getProductExpiryMeta(item);
+              const isExpiryDropdownOpen = openExpiryDropdownId === (item._id || item.id);
+              const isPriceDropdownOpen = openPriceDropdownId === (item._id || item.id);
+
+              const activeBatches = (item.batches || []).filter(
+                (b) => !b.isArchived && Number(b.quantity || 0) > 0,
+              );
+              const batchList = activeBatches;
+              const priceBatches = batchList.length > 0 ? batchList : [
+                {
+                  _id: item._id || "single",
+                  batchNumber: item.batchNumber || "BATCH-001",
+                  quantity: qty,
+                  sellingPrice: item.sellingPrice,
+                  buyingPrice: item.buyingPrice,
+                },
+              ];
 
               return (
                 <tr
@@ -213,6 +339,17 @@ const InventoryTable = ({
                         </div>
                       )}
                       <div className="min-w-0">
+                        {/* Batch Number line at the top */}
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                            <span>
+                              Batch: {item.batches && item.batches.length > 0 
+                                ? item.batches.map(b => b.batchNumber).join(", ") 
+                                : item.batchNumber || "BATCH-001"}
+                            </span>
+                          </span>
+                        </div>
                         <p className="font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm">
                           {item.name}
                         </p>
@@ -232,6 +369,7 @@ const InventoryTable = ({
                   <td className="md:hidden px-3 sm:px-6 py-2 sm:py-4">
                     <ProductActionMenu
                       onDetails={() => handleNavigateToDetails(item)}
+                      onBatches={() => setSelectedProductForBatch(item)}
                       onEdit={() => onEdit?.(item)}
                       onDelete={() => onDelete?.(item)}
                     />
@@ -255,19 +393,172 @@ const InventoryTable = ({
                   </td>
 
                   <td className="px-3 sm:px-6 py-2 sm:py-4">
-                    <p className="font-black text-slate-900 text-xs sm:text-base">
-                      {currencySymbol}
-                      {Number(item.sellingPrice || 0).toFixed(2)}
-                    </p>
-                    <p className="text-[8px] sm:text-[10px] text-slate-500 font-semibold">
-                      per {(item.unit || "unit").toLowerCase()}
-                    </p>
+                    <div className="relative inline-block price-dropdown-container">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenPriceDropdownId(isPriceDropdownOpen ? null : (item._id || item.id));
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200/80 bg-white/60 shadow-2xs group"
+                        title="Click to view batch prices"
+                      >
+                        <span className="text-xs font-black text-slate-700">{currencySymbol}</span>
+                        <svg
+                          className={`w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-transform ${
+                            isPriceDropdownOpen ? "rotate-180 text-blue-600" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {/* Dropdown List of Batch Prices */}
+                      {isPriceDropdownOpen && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute left-0 mt-1.5 z-[100] w-64 bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 animate-scale-up text-left"
+                        >
+                          <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                              Batch Prices ({priceBatches.length})
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setOpenPriceDropdownId(null)}
+                              className="text-slate-400 hover:text-slate-600 text-xs p-0.5 rounded"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                            {priceBatches.map((b) => (
+                              <div
+                                key={b._id || b.batchNumber}
+                                className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-slate-100"
+                              >
+                                <div>
+                                  <p className="text-xs font-mono font-bold text-slate-800">
+                                    {b.batchNumber}
+                                  </p>
+                                  <p className="text-[10px] text-slate-500 font-medium">
+                                    Stock: {b.quantity ?? 0} {item.unit || "pcs"}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs font-bold text-slate-900">
+                                    {currencySymbol}{Number(b.sellingPrice ?? item.sellingPrice ?? 0).toFixed(2)}
+                                  </p>
+                                  {b.buyingPrice !== undefined && Number(b.buyingPrice) > 0 && (
+                                    <p className="text-[9px] text-slate-400 font-medium">
+                                      Cost: {currencySymbol}{Number(b.buyingPrice).toFixed(2)}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </td>
 
                   <td className="px-3 sm:px-6 py-2 sm:py-4">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-2 w-2 rounded-full flex-shrink-0 ${expiry.dot}`} />
-                      <span className="font-bold text-slate-700 text-xs sm:text-sm">{expiry.label}</span>
+                    <div className="relative inline-block expiry-dropdown-container">
+                      {expiryMeta.hasDropdown ? (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenExpiryDropdownId(isExpiryDropdownOpen ? null : (item._id || item.id));
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200/80 bg-white/60 shadow-2xs group"
+                            title="Click to view batch expiry details"
+                          >
+                            <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${expiryMeta.primaryDot}`} />
+                            <svg
+                              className={`w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-transform ${
+                                isExpiryDropdownOpen ? "rotate-180 text-blue-600" : ""
+                              }`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+
+                          {/* Dropdown List of Expiry Dates */}
+                          {isExpiryDropdownOpen && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute left-0 mt-1.5 z-[100] w-64 bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 animate-scale-up text-left"
+                            >
+                              <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                  Batch Expiry ({expiryMeta.batches.length})
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenExpiryDropdownId(null)}
+                                  className="text-slate-400 hover:text-slate-600 text-xs p-0.5 rounded"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                              <div className="space-y-1 max-h-48 overflow-y-auto">
+                                {expiryMeta.batches.map((b) => (
+                                  <div
+                                    key={b._id || b.batchNumber}
+                                    className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className={`h-2 w-2 rounded-full flex-shrink-0 ${b.meta.dot}`} />
+                                      <div>
+                                        <p className="text-xs font-mono font-bold text-slate-800">
+                                          {b.batchNumber}
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 font-medium">
+                                          Stock: {b.quantity}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-xs font-semibold text-slate-700">
+                                        {b.meta.label}
+                                      </p>
+                                      <p
+                                        className={`text-[9px] font-bold ${
+                                          b.meta.status === "red"
+                                            ? "text-red-600"
+                                            : b.meta.status === "yellow"
+                                            ? "text-amber-600"
+                                            : b.meta.status === "green"
+                                            ? "text-emerald-600"
+                                            : "text-slate-400"
+                                        }`}
+                                      >
+                                        {b.meta.text}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div
+                          className="flex items-center justify-center p-1"
+                          title="No Expiry Date"
+                        >
+                          <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${expiryMeta.primaryDot}`} />
+                        </div>
+                      )}
                     </div>
                   </td>
 
@@ -280,6 +571,7 @@ const InventoryTable = ({
                   <td className="hidden md:table-cell px-3 sm:px-6 py-2 sm:py-4 text-right">
                     <ProductActionMenu
                       onDetails={() => handleNavigateToDetails(item)}
+                      onBatches={() => setSelectedProductForBatch(item)}
                       onEdit={() => onEdit?.(item)}
                       onDelete={() => onDelete?.(item)}
                     />
@@ -313,6 +605,33 @@ const InventoryTable = ({
             </button>
           </div>
         </div>
+      )}
+      {/* Existing Product & Batch Manager Modal */}
+      {selectedProductForBatch && (
+        <ExistingProductModal
+          isOpen={!!selectedProductForBatch}
+          onClose={() => setSelectedProductForBatch(null)}
+          product={selectedProductForBatch}
+          initialBatches={selectedProductForBatch.batches || []}
+          storeId={storeId}
+          onSuccess={(freshBatches) => {
+            if (freshBatches) {
+              const updatedTotalStock = freshBatches.reduce(
+                (acc, b) => acc + (b.isArchived ? 0 : Number(b.quantity || 0)),
+                0
+              );
+              setSelectedProductForBatch((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      quantity: updatedTotalStock,
+                      batches: freshBatches,
+                    }
+                  : null
+              );
+            }
+          }}
+        />
       )}
     </section>
   );

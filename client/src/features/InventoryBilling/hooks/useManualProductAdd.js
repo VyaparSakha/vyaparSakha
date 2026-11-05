@@ -48,28 +48,6 @@ export const useManualProductAdd = () => {
       const results = storeProducts.filter((product) =>
         productMatchesQuery(product, normalizedQuery),
       );
-      searchCache.current.set(normalizedQuery, results);
-      setSearchResults(results);
-      setIsSearching(false);
-      return undefined;
-    }
-
-    const exactCachedResults = searchCache.current.get(normalizedQuery);
-    if (exactCachedResults) {
-      setSearchResults(exactCachedResults);
-      setIsSearching(false);
-      return undefined;
-    }
-
-    const cachedPrefix = [...searchCache.current.keys()]
-      .filter((cachedQuery) => normalizedQuery.startsWith(cachedQuery))
-      .sort((first, second) => second.length - first.length)[0];
-
-    if (cachedPrefix) {
-      const results = searchCache.current
-        .get(cachedPrefix)
-        .filter((product) => productMatchesQuery(product, normalizedQuery));
-      searchCache.current.set(normalizedQuery, results);
       setSearchResults(results);
       setIsSearching(false);
       return undefined;
@@ -78,10 +56,10 @@ export const useManualProductAdd = () => {
     setIsSearching(true);
     const timeoutId = setTimeout(async () => {
       try {
-        const products = await searchProductInStore(query, storeId);
+        const cleanStore = typeof storeId === "object" ? storeId?._id : storeId;
+        const products = await searchProductInStore(query, cleanStore);
         if (currentRequest === requestId.current) {
-          const results = products || [];
-          searchCache.current.set(normalizedQuery, results);
+          const results = Array.isArray(products) ? products : [];
           setSearchResults(results);
         }
       } catch (error) {
@@ -94,7 +72,7 @@ export const useManualProductAdd = () => {
           setIsSearching(false);
         }
       }
-    }, 250);
+    }, 200);
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm, storeId, storeProducts]);
@@ -113,8 +91,8 @@ export const useManualProductAdd = () => {
   }, [selectedProduct, quantity, addProductManually, setManualProductOpen]);
 
   const addProduct = useCallback(
-    (product) => {
-      if (addProductManually(product, 1)) {
+    (product, batch = null) => {
+      if (addProductManually(product, 1, batch)) {
         setSearchTerm("");
         setSelectedProduct(null);
       }
